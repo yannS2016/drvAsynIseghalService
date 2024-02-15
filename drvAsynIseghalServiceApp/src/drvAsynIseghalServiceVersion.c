@@ -32,7 +32,7 @@ static long read_string(lsiRecord *prec)
     return 0;
 }
 
-static lsidset devdrvAsynIseghalServiceVersion = {
+static lsidset drvAsynIseghalServiceVersion = {
 	{5, NULL, NULL, NULL, NULL}, read_string
 };
-epicsExportAddress(dset,devdrvAsynIseghalServiceVersion);
+epicsExportAddress(dset,drvAsynIseghalServiceVersion);
