@@ -24,7 +24,7 @@
 # Variables and paths to dependent modules:
 MODULES = /opt/epics/support
 ASYN = $(MODULES)/asyn-R4-42
-
+ISEGHAL = /usr/local/epics/drivers/iseghal
 # EPICS_BASE should appear last so earlier modules can override stuff:
 EPICS_BASE = /opt/epics/base-7.0.7
 

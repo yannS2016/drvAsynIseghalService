@@ -5,6 +5,11 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
+ifneq ($(ISEGHAL),)
+    USR_INCLUDES += -I$(ISEGHAL) -I$(ISEGHAL)/include
+    USR_LDFLAGS  += -L$(ISEGHAL) -L$(ISEGHAL)/lib
+endif
+
 DBD += drvAsynIseghalService.dbd
 
 LIBRARY_IOC += drvAsynIseghalService
@@ -12,11 +17,13 @@ LIBRARY_IOC += drvAsynIseghalService
 drvAsynIseghalService_SRCS += drvAsynIseghalServiceVersion.c
 drvAsynIseghalService_SRCS += drvAsynIseghalService.cpp
 
+drvAsynIseghalService_SYS_LIBS += isegHAL-service
 drvAsynIseghalService_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 drvAsynIseghalService_DBD += base.dbd
 drvAsynIseghalService_DBD += asyn.dbd
 drvAsynIseghalService_DBD += drvAsynIseghalServiceVersion.dbd
+drvAsynIseghalService_DBD += drvAsynIseghalServiceSupport.dbd
 #=============================
 # Auto-generate a header file containing a version string.
 # Version comes from the VCS if available, else date+time.
@@ -31,6 +38,7 @@ drvAsynIseghalServiceTest_SRCS += drvAsynIseghalService_registerRecordDeviceDriv
 drvAsynIseghalServiceTest_SRCS_DEFAULT += drvAsynIseghalServiceMain.cpp
 
 drvAsynIseghalServiceTest_LIBS += drvAsynIseghalService asyn
+drvAsynIseghalServiceTest_SYS_LIBS += isegHAL-service
 drvAsynIseghalServiceTest_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 include $(TOP)/configure/RULES
