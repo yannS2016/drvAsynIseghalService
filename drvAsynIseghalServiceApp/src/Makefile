@@ -10,6 +10,8 @@ ifneq ($(ISEGHAL),)
     USR_LDFLAGS  += -L$(ISEGHAL) -L$(ISEGHAL)/lib
 endif
 
+USR_CXXFLAGS +=-std=c++11
+
 DBD += drvAsynIseghalService.dbd
 
 LIBRARY_IOC += drvAsynIseghalService
