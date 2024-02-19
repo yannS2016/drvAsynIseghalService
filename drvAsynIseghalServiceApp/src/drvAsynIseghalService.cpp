@@ -20,6 +20,7 @@
 // EPICS includes
 #include <epicsEvent.h>
 #include <epicsExport.h>
+#include <epicsExit.h>
 #include <epicsMutex.h>
 #include <epicsString.h>
 #include <epicsThread.h>
@@ -105,6 +106,21 @@ int drvAsynIseghalService::devConnected( std::string const& name ) {
   return false;
 }
 
+/** Called by epicsAtExit to shutdown iseghal session */
+static void iseghalSessionShutdown( void* arg) {
+	asynStatus status;
+	drvAsynIseghalService *pPvt = (drvAsynIseghalService *) arg;
+	status = pasynManager->lockPort(pPvt->self_);
+  if(status!=asynSuccess)
+        asynPrint(pPvt->self_, ASYN_TRACE_ERROR, "%s: cleanup locking error\n", pPvt->portName);
+			
+	asynPrint(pPvt->self_, ASYN_TRACE_WARNING, "drvAsynIseghalService: Closing iseghal %s session...\n", pPvt->portName);
+	//printf("drvAsynIseghalService: Stopping %s... ", pPvt->portName);
+	pPvt->devDisconnect(pPvt->portName);
+  if(status==asynSuccess)
+    pasynManager->unlockPort(pPvt->self_);
+
+}
 
 drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect ) 
   : asynPortDriver( portName, 
@@ -123,10 +139,10 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 	static const char *functionName = "drvAsynIseghalService";
 
 
-	deviceName_ 	= epicsStrDup( portName );
+	deviceSession_ 	= epicsStrDup( portName );
 	interface_  	= epicsStrDup( interface );
 	deviceModel_	= epicsStrDup( icsCtrtype );
-	
+	self_ = pasynManager->createAsynUser(0,0);
 	if( autoConnect ) {
 		
 		pasynManager->exceptionDisconnect( pasynUserSelf );
@@ -138,6 +154,8 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
                  "drvAsynIseghalService, error calling connect - %s\n",
                  pasynUserSelf->errorMessage );
     }
+		/* Register the shutdown function for epicsAtExit */
+    epicsAtExit(iseghalSessionShutdown, (void*)this);
   }
 
 	itemIndex = 0;
@@ -257,7 +275,7 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
       if (itemIndex > NITEMS) {
             asynPrint(pasynUser, ASYN_TRACE_ERROR,
                         "%s:%s: Not enough space allocated to store all iseghal items, increase NITEMS\n",
-                        deviceName_, functionName);
+                        deviceSession_, functionName);
             return asynError;
       }
 
@@ -295,18 +313,18 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 */
 asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
 	
-	if( devConnected( deviceName_ ) )	{
+	if( devConnected( deviceSession_ ) )	{
 		epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Link to %s already open!", deviceName_, interface_ );
+                   "%s: Link to %s already open!", deviceSession_, interface_ );
     return asynError;
 	}
 	
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
-             "%s: Open connection to %s\n", deviceName_, interface_ );
+             "%s: Open connection to %s\n", deviceSession_, interface_ );
 	
-	if( !devConnect(deviceName_, interface_) ) {
+	if( !devConnect(deviceSession_, interface_) ) {
     epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Can't open %s: %s", deviceName_, interface_, strerror( errno ) );
+                   "%s: Can't open %s: %s", deviceSession_, interface_, strerror( errno ) );
     return asynError;
 	}
 	/* check devices is responsive.
@@ -323,11 +341,11 @@ asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
 	} 
 	
 	
-  IsegItem model = iseg_getItem( deviceName_, modelBA );
+  IsegItem model = iseg_getItem( deviceSession_, modelBA );
   if( strcmp( model.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
 
     epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "\033[31;1m%s: Error while reading from device (Q: %s): %s\033[0m", deviceName_, model.quality, strerror( errno ) );
+                   "\033[31;1m%s: Error while reading from device (Q: %s): %s\033[0m", deviceSession_, model.quality, strerror( errno ) );
     return asynError;
   }
 	else {
@@ -349,11 +367,11 @@ asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
 asynStatus drvAsynIseghalService::disconnect(asynUser *pasynUser) {
 	
 	asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
-             "%s: disconnect %s\n", deviceName_, interface_ );
+             "%s: disconnect %s\n", deviceSession_, interface_ );
 						 
-	if(!devDisconnect( deviceName_ )) {
+	if(!devDisconnect( deviceSession_ )) {
 		epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: cannot diconnect from %s ", deviceName_, interface_ );
+                   "%s: cannot diconnect from %s ", deviceSession_, interface_ );
     return asynError;
 	}
 	

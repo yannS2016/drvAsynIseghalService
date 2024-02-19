@@ -190,6 +190,11 @@ class drvAsynIseghalService : public asynPortDriver {
 		virtual	asynStatus connect(asynUser *pasynUser);
 		virtual	asynStatus disconnect(asynUser *pasynUser);
 		
+		asynUser          *self_;	
+		int devConnect( std::string const& name, std::string const& interface );
+ 		int devConnected( std::string const& name );
+		int devDisconnect( std::string const& name );
+		int hasIsegHalItem (const char *item);
 	protected:
 		// Values used for pasynUser->reason, and indexes into the parameter library.
 		// system items are not CAN address dependant.
@@ -207,19 +212,17 @@ class drvAsynIseghalService : public asynPortDriver {
 		int P_SysSVers;				//index for Parameter "ServerVersion"
 		int P_SysNetTout;			//index for Parameter "NetworkTimeout"
 		int P_SysSSname;			//index for Parameter "SessionName"
-												
+		
+		// for cleanup
+		
 		int iseghalItems[NITEMS];
 #define FIRST_ISEGHAL_SERVICE_CMD P_SysStatus
 #define LAST_ISEGHAL_SERVICE_CMD  P_SysSSname
 
 	private:
 	
-		int devConnect( std::string const& name, std::string const& interface );
- 		int devConnected( std::string const& name );
-		int devDisconnect( std::string const& name );
-		int hasIsegHalItem (const char *item);
-		
-		char		*deviceName_;
+       
+		char		*deviceSession_;
 		char		*interface_;
 		char		*deviceModel_; 					
 		int 		itemIndex;
@@ -227,11 +230,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		std::vector< std::string > session_;
 		
 
-		
-		std::map<int, epicsUInt32> lineAddr_;
-		std::map<int, epicsUInt32> crateAddr_;
-		std::map<int, epicsUInt32> modAddr_;
-		std::map<int, epicsUInt32> chanAddr_;
+	
 
 };
 
