@@ -34,7 +34,7 @@
 
 // These are the drvInfo strings that are used to identify the parameters.
 // They are used by asyn clients, including standard asyn device support
-std::vector<std::string> iseghalItemLookup
+std::vector<std::string> validIsegHalItems
 {
 	 "Status",
 	 "EventStatus",
@@ -228,6 +228,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		int 		itemIndex;
 		epicsUInt32					pollTime_;
 		std::vector< std::string > session_;
+		std::map<std::string, epicsUInt32> isegHalItemsLookup;
 		
 
 	
