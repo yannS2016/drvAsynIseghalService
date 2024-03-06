@@ -228,7 +228,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		int 		itemIndex;
 		epicsUInt32					pollTime_;
 		std::vector< std::string > session_;
-		std::map<std::string, epicsUInt32> isegHalItemsLookup;
+		std::map<epicsUInt32, std::string> isegHalItemsLookup;
 		
 
 	
