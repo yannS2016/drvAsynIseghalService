@@ -152,7 +152,11 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 }
 
 
-asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ return asynSuccess; }
+asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ 
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+  
+	return asynSuccess; 
+}
 
 /*
 *  @brief   Called when asyn clients call pasynFloat64->read().
@@ -166,7 +170,8 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 */
 asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value ) {
 
-	
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+  
 	return asynSuccess;
 }
 
@@ -400,19 +405,9 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
 }
 
 
-char * parseItem(const char *function) {
-    size_t len;
-    const char *p;
-    const char *pnext;
-		pnext = function;
-		
-		for(len=0; *pnext && isalpha(*pnext); len++, pnext++){}
-		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
-								<< " thread: " << "Write Item: " << pnext <<"\033[0m" << std::endl;
-	 return NULL;
-}
 asynStatus drvAsynIseghalService::readInt32(asynUser *pasynUser, epicsInt32 *value) { 
-	
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+  
 	return asynSuccess; 
 }
 asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 value) { 
@@ -429,16 +424,26 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
   asynStatus status = asynSuccess;
 	
 	IsegItem item = EmptyIsegItem;
-	
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+  
 
 	char sVal[20];
 	getParamName(function, &propertyName);
-	parseItem(propertyName);
+
 
 	return asynSuccess; 
 }
-asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason){ return asynSuccess; }
-asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual){ return asynSuccess; }
+asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason) { 
+	
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+  
+	return asynSuccess; 
+}
+asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual) { 
+			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+  
+	return asynSuccess; 
+}
 
 /*Drv info utility to skip whitespace from userparms
 * reusing the definitions from asynEpicsUtils*/
@@ -460,12 +465,12 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 	static const char *functionName = "drvUserCreate";
 
   /* the parameter is of format TYPE_item($(ADDR)) where Type is INT for int, DBL for double, or STR for string and DIG for UINT32DIGITAL
-  * The fully qualified name for setting a new item value is item.ADDR, this is used to create the corresponding isegitem parameter.
+  * The fully qualified name (FQN) for gettting/setting an item value is ADDR.item, this is used to create the corresponding iseghalitem parameter.
 	*/
 	size_t len;
   const char *p;
   const char *pnext;
-	
+	bool sysItem =  0;
   if (strlen(drvInfo) > 4 ) {
 		
     pnext = skipWhite(drvInfo,0);
@@ -479,9 +484,9 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
         return asynError;
 		}
 		
-		char paramtype[len+1];
-		paramtype[len] = 0;
-		strncpy(paramtype, p, len);
+		char halItemType[len+1];
+		halItemType[len] = 0;
+		strncpy(halItemType, p, len);
 
 		//next is item
 		p = skipWhite(pnext,1);
@@ -497,16 +502,17 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 		for(len=0; *p && isalpha(*p); len++, p++){}
 		// 3: we expect 2  additional character for control param address
 		int len_ = len+4;
-		char halItem[len_];
+		char halItem[len];
 		char tmp[len_];
 
 		strncpy(halItem, pnext, len);
-		*(halItem+len)=0; // terminate string
-		
+		*(halItem+len)=0x0; // terminate string
+						/* std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+									<< " thread: " << "Item:" << halItem << "\033[0m" << std::endl; */
     // Check we have this iseghal item
 		if (!this->hasIsegHalItem(halItem)) {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
-                "%s:%s: Parameter '%s' doesn't exist on iseghal item list\n",
+                "\033[0;33m %s:%s: Parameter '%s' doesn't exist on iseghal item list\n\033[0m",
                 driverName, functionName, halItem);
 					// Update alarms status.
 			pasynUser->alarmStatus = 17; 		// UDF
@@ -523,65 +529,90 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 			for(len=0; *p && isdigit(*p); len++, p++){}
 			char ctrlAddr[len+1];
 			strncpy(ctrlAddr, pnext, len);
-
 			epicsSnprintf(tmp, len_, "%s:%s", halItem, ctrlAddr);
-			
-/* 			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
-								<< " thread: " << "Write Item:" << tmp << " : "<< len_<< "\033[0m" << std::endl;
-			 */
+			*(tmp+len_) = 0x0;
+
+		
+		} else {
+			strcpy(tmp, halItem);
+			*(tmp+len_) = 0x0;
 		}
-		*(tmp+len_) = 0x0;
 		
 		char halItemFQN[FQN_LEN];
-
 		//next is addr, no addr for system items
 		pnext = p;
 		pnext = strstr(p,"(");
 		if(!pnext) {
-			if(strcmp(halItem, "Status") == 0
-				|| strcmp(halItem, "CrateNumber") == 0 || strcmp(halItem, "ModuleNumber") == 0 
-				|| strcmp(halItem, "CycleCounter") == 0 || strcmp(halItem, "Configuration") == 0
-				|| strcmp(halItem, "Read") == 0 || strcmp(halItem, "Write ") == 0 || strcmp(halItem, "LogLevel") == 0 
-				|| strcmp(halItem, "LogPath") == 0 || strcmp(halItem, "LiveInsertionMode") == 0
-				|| strcmp(halItem, "SaveConfiguration") == 0 || strcmp(halItem, "LiveInsertionMode") == 0
-				|| strcmp(halItem, "ServerVersion") == 0 || strcmp(halItem, "NetworkTimeout") == 0 || strcmp(halItem, "SessionName") == 0) {
-
+			//not a system item?
+			if(strcmp(tmp, "Status") == 0 || strcmp(tmp, "CrateNumber") == 0
+				|| strcmp(tmp, "ModuleNumber") == 0 || strcmp(tmp, "CycleCounter") == 0 || strcmp(tmp, "Configuration") == 0
+				|| strcmp(tmp, "Read") == 0 || strcmp(tmp, "Write ") == 0 || strcmp(tmp, "LogLevel") == 0 
+				|| strcmp(tmp, "LogPath") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
+				|| strcmp(tmp, "SaveConfiguration") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
+				|| strcmp(tmp, "ServerVersion") == 0 || strcmp(tmp, "NetworkTimeout") == 0 || strcmp(tmp, "SessionName") == 0) {
 				// Create fully qualified object for system items
-				strcpy(halItemFQN, halItem);
-				*(halItemFQN+len)=0;
-			
-				std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
-									<< " thread: " << "Item FQN:" << halItemFQN << "\033[0m" << std::endl;
-			} 
-			else {
-			  epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
-            "invalid USERPARAM Must be TYPE _/ item(ADDR)");
+				strcpy(halItemFQN, tmp);
+	
+			} else {
+				epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+            "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
 				pasynUser->alarmStatus = 17; 		// UDF
 				pasynUser->alarmSeverity = 3; 	// INVALID
         return asynError;
 			}
-		} 
-		else {
-				pnext++;
-				pnext = skipWhite(pnext,0);
-				p = pnext;
-				for(len=0; *p && (*p!=' ') && (*p!=')'); len++, p++){}
-				if(*p==0) {
-						epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
-								"invalid USERPARAM Must be TYPE _/ item(ADDR)");
-						return asynError;
-				}
-				char itemAddr[len+1];
-				strncpy(itemAddr, pnext, len);
-				*(itemAddr+len)=0;
-/* 				std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
-								<< " thread: " <<"Item: " << halItem << " Addr:" << itemAddr << "\033[0m" << std::endl; */
-				// Create fully qualified object for system items
-				epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", itemAddr, halItem);
-				std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
-								<< " thread: " <<"Item: " << " FQN " << halItemFQN<< "\033[0m" << std::endl;
+
+		} else {
+			pnext++;
+			p = skipWhite(pnext,0);
+		
+			for(len=0; *p && (*p!=' ') && (*p!=')'); len++, p++){}
+			
+			if(*p==0) {
+				epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+					"invalid USERPARAM Must be TYPE _/ item(ADDR)");
+							return asynError;
+			}
+			char itemAddr[len+1];
+			strncpy(itemAddr, pnext, len);
+			*(itemAddr+len)=0;
+	
+			// Create fully qualified object for system items
+			epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", itemAddr, tmp);
+		}
+
+/* 			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+								<< " thread: " <<"halItemFQN: " << halItemFQN << "\033[0m" << std::endl;
+		 */
+
+
+
+
+		
+		int index;
+		if (findParam(halItemFQN, &index) ) {
+			//Make parameter of the correct type
+			if( strcmp(halItemType, "INT") == 0) {
+					createParam(halItemFQN, asynParamInt32, &itemIndex);
+			} else if (strcmp(halItemType, "DBL") == 0) {
+					createParam(halItemFQN, asynParamFloat64, &itemIndex);
+			} else if (strcmp(halItemType, "STR") == 0) {
+					createParam(halItemFQN, asynParamOctet, &itemIndex);
+			} else if (strcmp(halItemType, "DIG") == 0) {
+					createParam(halItemFQN, asynParamUInt32Digital, &itemIndex);
+			} else {
+					asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR,
+											"%s:%s: Expected Type is INT|DBL|STR|DIG. Got '%s'\n", driverName, functionName, halItemType);
+					return asynError;
+			}
+			
+			pasynUser->reason = itemIndex;
+			isegHalItemsLookup.insert( std::make_pair( itemIndex, std::string(tmp) ) );
+			
+			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "FQN: " << halItemFQN << " index: " << itemIndex <<"\033[0m" << std::endl;
+			itemIndex++;
 		}
 	}
+	
 	return asynSuccess;
 }
 

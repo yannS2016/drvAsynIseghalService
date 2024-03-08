@@ -4,6 +4,8 @@ include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
+EXCLUDE_ARCHS += linux-ppc64e6500
+EXCLUDE_ARCHS += linux-corei7-poky
 
 ifneq ($(ISEGHAL),)
     USR_INCLUDES += -I$(ISEGHAL) -I$(ISEGHAL)/include

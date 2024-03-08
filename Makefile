@@ -1,5 +1,9 @@
 # Makefile at top of application tree
 TOP = .
+
+EXCLUDE_ARCHS += linux-ppc64e6500
+EXCLUDE_ARCHS += linux-corei7-poky
+
 include $(TOP)/configure/CONFIG
 
 # Directories to build, any order
