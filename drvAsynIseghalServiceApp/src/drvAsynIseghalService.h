@@ -110,10 +110,10 @@
 
 // Channel items
 #define P_ISEGHAL_SERVICE_CHANTEMP_STRING         "Temperature"     			/* asynFloat64,    r */  
-#define P_ISEGHAL_SERVICE_CHANVSET_STRING         "VoltageSet"       			/* asynFloat64,    r/w */
-#define P_ISEGHAL_SERVICE_CHANISET_STRING         "CurrentSet"     				/* asynFloat64,    r/w */
-#define P_ISEGHAL_SERVICE_CHANVMOM_STRING         "VoltageMeasure"   			/* asynFloat64,    r */  
-#define P_ISEGHAL_SERVICE_CHANIMOM_STRING         "CurrentMeasure"    		/* asynFloat64,    r */  
+#define P_ISEGHAL_SERVICE_CHANVSET_STRING         "0.0.0.VoltageSet"       			/* asynFloat64,    r/w */
+#define P_ISEGHAL_SERVICE_CHANISET_STRING         "0.0.0.CurrentSet"     				/* asynFloat64,    r/w */
+#define P_ISEGHAL_SERVICE_CHANVMOM_STRING         "0.0.0.VoltageMeasure"   			/* asynFloat64,    r */  
+#define P_ISEGHAL_SERVICE_CHANIMOM_STRING         "0.0.0.CurrentMeasure"    		/* asynFloat64,    r */  
 #define P_ISEGHAL_SERVICE_CHANVBOUNDS_STRING      "VoltageBounds" 				/* asynFloat64,    r/w */
 #define P_ISEGHAL_SERVICE_CHANIBOUNDS_STRING      "CurrentBounds"  				/* asynFloat64,    r/w */
 #define P_ISEGHAL_SERVICE_CHANVNOM_STRING         "VoltageNominal" 				/* asynFloat64,    r/w */

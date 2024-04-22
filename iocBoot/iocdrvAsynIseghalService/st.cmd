@@ -24,8 +24,8 @@ drvAsynIseghalServiceConfig( "$(ISEGSESSION)", "$(ISEGIFACE)", "icsmini", 1 )
 
 epicsThreadSleep(2)
 
-asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_ERROR)
-#asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_WARNING)
+asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_WARNING|ASYN_TRACE_ERROR|ASYN_TRACE_DRIVER|ASYN_TRACEIO_DRIVER)
+
 
 dbLoadRecords("../../db/drvAsynIseghalService.db","P=iseghal,R=service,PORT=$(ISEGSESSION), ADDR=0.0.0")
 
