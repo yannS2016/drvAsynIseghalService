@@ -43,6 +43,10 @@
 static const char *driverName = "drvAsynIseghalService";
 
 #define DEFAULT_POLL_TIME 0.01
+#define WRITE_LEN 20
+#define FQN_LEN 34
+//_____ D E F I N I T I O N S __________________________________________________
+typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
 /** Connect to iseg device
 	*
@@ -118,6 +122,7 @@ static void iseghalSessionShutdown( void* arg) {
   if(status==asynSuccess)
     pasynManager->unlockPort(pPvt->self_);
 
+
 }
 
 drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
@@ -125,9 +130,9 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 		1, // maxAddr
 		NUM_ISEGHAL_SERVICE_PARAMS,
 		// Interface mask
+		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynDrvUserMask | asynOctetMask,
 		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
-		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
-		ASYN_CANBLOCK | ASYN_MULTIDEVICE, // asynFlags.
+		ASYN_CANBLOCK , // asynFlags.
 		autoConnect, // Autoconnect
 		0, // Default priority
 		0 ), // Default stack size
@@ -142,153 +147,104 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 	deviceModel_	= epicsStrDup( icsCtrtype );
 	self_ = pasynUserSelf;
 
-	createParam( P_ISEGHAL_SERVICE_SYSSTATUS_STRING,					asynParamUInt32Digital,		&P_SysStatus);
-	createParam( P_ISEGHAL_SERVICE_LNSTATUS_STRING,						asynParamUInt32Digital,		&P_LineStatus);
-	createParam( P_ISEGHAL_SERVICE_CRTSTATUS_STRING,					asynParamUInt32Digital,		&P_CrtStatus);
-	createParam( P_ISEGHAL_SERVICE_CRTEVTSTATUS_STRING,				asynParamUInt32Digital,		&P_CrtEvtStatus);
-	createParam( P_ISEGHAL_SERVICE_CRTEVTMASK_STRING,					asynParamUInt32Digital,		&P_CrtEvtMask);
-	createParam( P_ISEGHAL_SERVICE_CRTCTRL_STRING,						asynParamUInt32Digital,		&P_CrtCtrl);
-	createParam( P_ISEGHAL_SERVICE_MODSTATUS_STRING,					asynParamUInt32Digital,		&P_ModStatus);
-	createParam( P_ISEGHAL_SERVICE_MODEVTSTATUS_STRING,				asynParamUInt32Digital,		&P_ModevtStatus);
-	createParam( P_ISEGHAL_SERVICE_MODEVTMASK_STRING,					asynParamUInt32Digital,		&P_ModevtMask);
-	createParam( P_ISEGHAL_SERVICE_MODCTRL_STRING,						asynParamUInt32Digital,		&P_ModCtrl);
-	createParam( P_ISEGHAL_SERVICE_CHANSTATUS_STRING,					asynParamUInt32Digital,		&P_ChanStatus);
-	createParam( P_ISEGHAL_SERVICE_CHANEVTSTATUS_STRING,			asynParamUInt32Digital,		&P_ChanEvtStatus);
-	createParam( P_ISEGHAL_SERVICE_CHANEVTMASK_STRING,				asynParamUInt32Digital,		&P_ChanEvtMask);
-	createParam( P_ISEGHAL_SERVICE_CHANCTRL_STRING,						asynParamUInt32Digital,		&P_ChanCtrl);
-	// System items																																										
-	createParam( P_ISEGHAL_SERVICE_SYSCRTNUM_STRING,					asynParamInt32,						&P_SysCrtNum);
-	createParam( P_ISEGHAL_SERVICE_SYSCRTLIST_STRING,					asynParamInt32,						&P_SysCrtList);
-	createParam( P_ISEGHAL_SERVICE_SYSMODNUM_STRING,					asynParamInt32,						&P_SysModNum);
-	createParam( P_ISEGHAL_SERVICE_SYSCCTR_STRING,						asynParamInt32,						&P_SysCCtr);
-	createParam( P_ISEGHAL_SERVICE_SYSLOGL_STRING,						asynParamInt32,						&P_SysLogL);
-	createParam( P_ISEGHAL_SERVICE_SYSLOGPATH_STRING,					asynParamOctet,						&P_SysLogPath);
-	createParam( P_ISEGHAL_SERVICE_SYSLINMODE_STRING,					asynParamInt32,						&P_SysLinMode);
-	createParam( P_ISEGHAL_SERVICE_SYSSCONFIG_STRING,					asynParamInt32,						&P_SysSConfig);
-	createParam( P_ISEGHAL_SERVICE_SYSETHNAME_STRING,					asynParamOctet,						&P_SysEthName);
-	createParam( P_ISEGHAL_SERVICE_SYSETHADDR_STRING,					asynParamOctet,						&P_SysEthAddr);
-	createParam( P_ISEGHAL_SERVICE_SYSSVERS_STRING,						asynParamOctet,						&P_SysSVers);
-	createParam( P_ISEGHAL_SERVICE_SYSNETTOUT_STRING,					asynParamInt32,						&P_SysNetTout);
-	createParam( P_ISEGHAL_SERVICE_SYSSSNAME_STRING,					asynParamOctet,						&P_SysSSname);
-	// Can Line items
-	createParam( P_ISEGHAL_SERVICE_LNBRATE_STRING,						asynParamInt32,						&P_LnBRate);
-	createParam( P_ISEGHAL_SERVICE_LNMODNUM_STRING,						asynParamInt32,						&P_LnModNum);
-	createParam( P_ISEGHAL_SERVICE_LNCRTNUM_STRING,						asynParamInt32,						&P_LnCrtNum);
-	createParam( P_ISEGHAL_SERVICE_LNCRTLIST_STRING,					asynParamInt32,						&P_LnCrtList);
-	createParam( P_ISEGHAL_SERVICE_LNMODLIST_STRING,					asynParamInt32,						&P_LnModList);
-	createParam( P_ISEGHAL_SERVICE_LNLOGL_STRING,							asynParamInt32,						&P_LnLogL);
-	// Crate items
-	createParam( P_ISEGHAL_SERVICE_CRTSTAT_STRING,						asynParamInt32,						&P_CrtStat);
-	createParam( P_ISEGHAL_SERVICE_CRTALIVE_STRING,						asynParamInt32,						&P_CrtAlive);
-	createParam( P_ISEGHAL_SERVICE_CRTPON_STRING,							asynParamInt32,						&P_CrtPOn);
-	createParam( P_ISEGHAL_SERVICE_CRTFSPEEP_STRING,					asynParamInt32,						&P_CrtFSpeed);
-	createParam( P_ISEGHAL_SERVICE_CRTSN_STRING,							asynParamInt32,						&P_CrtSn);
-	createParam( P_ISEGHAL_SERVICE_CRTDEVC_STRING,						asynParamInt32,						&P_CrtDevC);
-	createParam( P_ISEGHAL_SERVICE_CRTFWRLS_STRING,						asynParamOctet,						&P_CrtFWRls);
-	createParam( P_ISEGHAL_SERVICE_CRTFWNAME_STRING,					asynParamOctet,						&P_CrtFWName);
-	createParam( P_ISEGHAL_SERVICE_CRTTEMP_STRING,						asynParamFloat64,					&P_CrtTemp);
-	createParam( P_ISEGHAL_SERVICE_CRTSUPPLY_STRING,					asynParamFloat64,					&P_CrtSupply);
-	createParam( P_ISEGHAL_SERVICE_CRTARTICLE_STRING,					asynParamOctet,						&P_CrtArticle);
-	// device/module items
-	createParam( P_ISEGHAL_SERVICE_MODSTAT_STRING,						asynParamInt32,						&P_ModStat);
-	createParam( P_ISEGHAL_SERVICE_MODALIVE_STRING,						asynParamInt32,						&P_ModAlive);
-	createParam( P_ISEGHAL_SERVICE_MODSN_STRING,							asynParamInt32,						&P_ModSn);
-	createParam( P_ISEGHAL_SERVICE_MODDEVC_STRING,						asynParamInt32,						&P_ModDevC);
-	createParam( P_ISEGHAL_SERVICE_MODFWRLS_STRING,						asynParamOctet,						&P_ModFWRls);
-	createParam( P_ISEGHAL_SERVICE_MODFWNAME_STRING,					asynParamOctet,						&P_ModFWName);
-	createParam( P_ISEGHAL_SERVICE_MODTEMP_STRING,						asynParamFloat64,					&P_ModTemp);
-	createParam( P_ISEGHAL_SERVICE_MODSUPPLY_STRING,					asynParamFloat64,					&P_ModSupply);
-	createParam( P_ISEGHAL_SERVICE_MODSRATE_STRING,						asynParamInt32,						&P_ModSRate);
-	createParam( P_ISEGHAL_SERVICE_MODDFILTER_STRING,					asynParamInt32,						&P_ModDFilter);
-	createParam( P_ISEGHAL_SERVICE_MODVRAMP_STRING,						asynParamFloat64,					&P_ModVRamp);
-	createParam( P_ISEGHAL_SERVICE_MODCRAMP_STRING,						asynParamFloat64,					&P_ModCRamp);
-	createParam( P_ISEGHAL_SERVICE_MODVLIM_STRING,						asynParamFloat64,					&P_ModVLim);
-	createParam( P_ISEGHAL_SERVICE_MODILIM_STRING,						asynParamFloat64,					&P_ModILim);
-	createParam( P_ISEGHAL_SERVICE_MODARTICLE_STRING,					asynParamOctet,						&P_ModArticle);
-	createParam( P_ISEGHAL_SERVICE_MODDOCLR_STRING,						asynParamInt32,						&P_ModDoClr);
-	createParam( P_ISEGHAL_SERVICE_MODFADJ_STRING,						asynParamInt32,						&P_ModFAdj);
-	createParam( P_ISEGHAL_SERVICE_MODKEN_STRING,							asynParamInt32,						&P_ModKEn);
-	// MICC option
-	createParam( P_ISEGHAL_SERVICE_MODHVOK_STRING,						asynParamOctet,						&P_ModHVOk);
-	// Channel items
-	createParam( P_ISEGHAL_SERVICE_CHANTEMP_STRING, 					asynParamFloat64,					&P_ChanTemp);
-	createParam( P_ISEGHAL_SERVICE_CHANVSET_STRING, 					asynParamFloat64,					&P_ChanVset);
-	createParam( P_ISEGHAL_SERVICE_CHANISET_STRING,						asynParamFloat64,					&P_ChanISet);
-	createParam( P_ISEGHAL_SERVICE_CHANVMOM_STRING,						asynParamFloat64,					&P_ChanVMom);
-	createParam( P_ISEGHAL_SERVICE_CHANIMOM_STRING,						asynParamFloat64,					&P_ChanIMom);
-	createParam( P_ISEGHAL_SERVICE_CHANVBOUNDS_STRING,				asynParamFloat64,					&P_ChanVBounds);
-	createParam( P_ISEGHAL_SERVICE_CHANIBOUNDS_STRING,				asynParamFloat64,					&P_ChanIBounds);
-	createParam( P_ISEGHAL_SERVICE_CHANVNOM_STRING,						asynParamFloat64,					&P_ChanVNom);
-	createParam( P_ISEGHAL_SERVICE_CHANINOM_STRING,						asynParamFloat64,					&P_ChanINom);
-	createParam( P_ISEGHAL_SERVICE_CHANDTRIPACT_STRING,				asynParamInt32,						&P_ChanDTripAct);
-	createParam( P_ISEGHAL_SERVICE_CHANDTRIPTIME_STRING,			asynParamInt32,						&P_ChanDTripTime);
-	createParam( P_ISEGHAL_SERVICE_CHANEXTINACT_STRING,    		asynParamInt32,						&P_ChanExtInAct);
-	createParam( P_ISEGHAL_SERVICE_CHANTEMPTRIP_STRING,				asynParamInt32,						&P_ChanTempTrip);
-	// Option Voltage controlled by temperature (VCT);
-	createParam( P_ISEGHAL_SERVICE_CHANTEMPEXT_STRING,				asynParamFloat64,					&P_ChanTempEXT);
-	createParam( P_ISEGHAL_SERVICE_CHANVCTCOEF_STRING,    		asynParamFloat64,					&P_ChanVctCoef);
-	// Option STACK
-	createParam( P_ISEGHAL_SERVICE_CHANRES_STRING,      			asynParamFloat64,					&P_ChanRes);
-	createParam( P_ISEGHAL_SERVICE_CHANVRAMPPRIO_STRING,   		asynParamInt32,						&P_ChanVRampPrio);
-	createParam( P_ISEGHAL_SERVICE_CHANVBOT_STRING,    				asynParamFloat64,					&P_ChanVBot);
-	// Option Reversible
-	createParam( P_ISEGHAL_SERVICE_CHANOUTMOD_STRING,      		asynParamInt32,						&P_ChanOutMod);
-	createParam( P_ISEGHAL_SERVICE_CHANOUTMODLIST_STRING, 		asynParamInt32,						&P_ChanOutModList);
-	createParam( P_ISEGHAL_SERVICE_CHANOUTPOL_STRING,    			asynParamInt32,						&P_ChanOutPol);
-	createParam( P_ISEGHAL_SERVICE_CHANOUTPOLLIST_STRING,			asynParamInt32,						&P_ChanOutPolList);
-	createParam( P_ISEGHAL_SERVICE_CHANVMOD_STRING,    				asynParamInt32,						&P_ChanVMod);
-	createParam( P_ISEGHAL_SERVICE_CHANVMODLIST_STRING,				asynParamInt32,						&P_ChanVModList);
-	createParam( P_ISEGHAL_SERVICE_CHANCMOD_STRING,						asynParamInt32,						&P_ChanCMod);
-	createParam( P_ISEGHAL_SERVICE_CHANCMODLIST_STRING,				asynParamInt32,						&P_ChanCModList);
-	createParam( P_ISEGHAL_SERVICE_CHANVRAMPSPUP_STRING,			asynParamFloat64,					&P_ChanVRampSpUp);
-	createParam( P_ISEGHAL_SERVICE_CHANVRAMSPDN_STRING,				asynParamFloat64,					&P_ChanVRAMSpDn);
-	createParam( P_ISEGHAL_SERVICE_CHANVRAMPSPMIN_STRING,			asynParamFloat64,					&P_ChanVRampSpMin);
-	createParam( P_ISEGHAL_SERVICE_CHANVRAMPSPMAX_STRING,			asynParamFloat64,					&P_ChanVRampSpMax);
-	createParam( P_ISEGHAL_SERVICE_CHANCRAMPSPUP_STRING,			asynParamFloat64,					&P_ChanCRampSpUp);
-	createParam( P_ISEGHAL_SERVICE_CHANCRAMPSPDN_STRING,   		asynParamFloat64,					&P_ChanCRampSpDn);
-	createParam( P_ISEGHAL_SERVICE_CHANCRAMPSPMIN_STRING,			asynParamFloat64,					&P_ChanCRampSpMin);
-	createParam( P_ISEGHAL_SERVICE_CHANCRAMPSPMAX_STRING,			asynParamFloat64,					&P_ChanCRampSpMax);
-	//Items for 0MPV (W-IE-NE-R); Modules
-	createParam( P_ISEGHAL_SERVICE_WNCHANTVMOM_STRING,				asynParamFloat64,					&P_WnChanTVMom);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVRRATE_STRING,				asynParamFloat64,					&P_WnChanVRRate);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVFRATE_STRING,				asynParamFloat64,					&P_WnChanVFRate);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVLTRIP_STRING,				asynParamFloat64,					&P_WnChanVLTrip);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVTRIP_STRING,				asynParamFloat64,					&P_WnChanVTrip);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTVTRIP_STRING,				asynParamFloat64,					&P_WnChanTVTrip);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVCTRIP_STRING,				asynParamFloat64,					&P_WnChanVCtrIP);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVPTRIP_STRING,				asynParamFloat64,					&P_WnChanVPTrip);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVTRIPMAX_STRING,			asynParamFloat64,					&P_WnChanVTripMax);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTVTRIPMAX_STRING,		asynParamFloat64,					&P_WnChanTVTripMax);
-	createParam( P_ISEGHAL_SERVICE_WNCHANCTRIPMAX_STRING,			asynParamFloat64,					&P_WnChanCTripMax);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTEMPTRIPMAX_STRING,	asynParamFloat64,					&P_WnChanTTripMax);
-	createParam( P_ISEGHAL_SERVICE_WNCHANPTRIPMAX_STRING,			asynParamFloat64,					&P_WnChanPTripMax);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVLTRIPTIME_STRING,		asynParamInt32,						&P_WnChanVLTripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVTRIPTIME_STRING,		asynParamInt32,						&P_WnChanVTripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTVTRIPTIME_STRING,		asynParamInt32,						&P_WnChanTVTripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANCTRIPTIME_STRING,		asynParamInt32,						&P_WnChanCtrIPTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTEMPTRIPTIME_STRING,	asynParamInt32,						&P_WnChanTempTripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANPTRIPTIME_STRING,		asynParamInt32,						&P_WnChanPTripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTOUTRIPTIME_STRING,	asynParamInt32,						&P_WnChanTOutripTime);
-	createParam( P_ISEGHAL_SERVICE_WNCHANGROUP_STRING,				asynParamInt32,						&P_WnChanGROUp);
-	createParam( P_ISEGHAL_SERVICE_WNCHANNAME_STRING,					asynParamOctet,						&P_WnChanName);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTRIPACT_STRING,			asynParamInt32,						&P_WnChanTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVLTRIPACT_STRING,		asynParamInt32,						&P_WnChanVLTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANVTRIPACT_STRING,			asynParamInt32,						&P_WnChanVTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTVTRIPACT_STRING,		asynParamInt32,						&P_WnChanTVTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANCTRIPACT_STRING,			asynParamInt32,						&P_WnChanCtrIPAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTEMPTRIPACT_STRING,	asynParamInt32,						&P_WnChanTempTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANPTRIPACT_STRING,			asynParamInt32,						&P_WnChanPTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANTOUTTRIPACT_STRING,	asynParamInt32,						&P_WnChanTOutTripAct);
-	createParam( P_ISEGHAL_SERVICE_WNCHANUSRCONFIG_STRING,		asynParamInt32,						&P_WnChanUsRConfig);
-
-
 	/* Register the shutdown function for epicsAtExit */
 	epicsAtExit(iseghalSessionShutdown, (void*)this);
 	itemIndex = 0;
 }
 
 
-asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ return asynSuccess; }
+asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ 
+
+	static const char *functionName = "writeFloat64";
+	
+  int function = pasynUser->reason;
+  char propertyName[FQN_LEN];
+	epicsTimeStamp timeStamp; getTimeStamp(&timeStamp);
+
+  asynStatus status = asynSuccess;
+	IsegItem item = EmptyIsegItem;
+	
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+
+	char sVal[20];
+	
+	// Test if interface is connected to isegHAL server
+  if( !devConnected( this->deviceSession_ ) ) {
+			// If we have no camera, then just fail 
+			return asynError;
+  }
+
+	itemIter it = isegHalItemsLookup.find( function );
+	
+	if (it == isegHalItemsLookup.end() ) {
+		  return asynError;
+	} else {
+    strcpy(propertyName, it->second.c_str());
+  }
+ 
+std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "FQN: "<<it->second << "\033[0m" << std::endl;
+
+	if (propertyName == NULL) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+      return asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "RW" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// READ
+		pasynUser->alarmSeverity = 3; 	//INVALID
+		
+    return asynError;
+  }
+
+	epicsSnprintf(  sVal, WRITE_LEN, "%f", value);
+
+  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "%s:%s: Error while writing value '%d' for %s : %s",
+      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+			
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+	}
+	
+	// update value of parameter
+	status = (asynStatus) setDoubleParam(function, value);
+
+	status = (asynStatus) callParamCallbacks();
+	
+  if( status ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%d",
+                   deviceSession_, functionName, status, function, value );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// Write
+		pasynUser->alarmSeverity = 3; 	// INVALID
+
+	}
+
+  else {
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%d\n", 
+              deviceSession_, functionName, function, value );
+	}       
+
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
+
+	return asynSuccess;
+ }
 
 /*
 *  @brief   Called when asyn clients call pasynFloat64->read().
@@ -301,47 +257,52 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 *           in pasynUser->errorMessage.
 */
 asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value ) {
+
  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << std::endl;
-  
 	static const char *functionName = "readFloat64";
 	
   int function = pasynUser->reason;
-	
-  const char *propertyName;
-	
   asynStatus status = asynSuccess;
-
+  char propertyName[FQN_LEN];
 	IsegItem item = EmptyIsegItem;
-	 
-  // Test if interface is connected to isegHAL server
+	epicsFloat64 dVal = 0;
+ int addr = 1;
+	char* tmp;
+
+	// Test if interface is connected to isegHAL server
   if( !devConnected( this->deviceSession_ ) ) {
 			// If we have no camera, then just fail 
-			return asynError;
+		return asynError;
   }
 
-	getParamName(function, &propertyName);
+	itemIter it = isegHalItemsLookup.find( function );
+	
+	if (it == isegHalItemsLookup.end() ) {
+		  return asynError;
+	} else {
+    strcpy(propertyName, it->second.c_str());
+  }
 
 	if (propertyName == NULL) {
 		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
       deviceSession_, functionName, propertyName);
-      return asynError;
-  }
-
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
-
-  if(strcmp( itemProperty.access, "R" ) != 0) {
-
-		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
-      "\033[31;1m%s:%s Read Not Allowed on iseghal item %s: Access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
-		// Update alarms status.
-		pasynUser->alarmStatus = 1; 		// READ
-		pasynUser->alarmSeverity = 3; 	//INVALID
-		
     return asynError;
   }
 
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+ std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << "item access:  " << itemProperty.access << std::endl;
+  if(strcmp( itemProperty.access, "R" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 1; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+  }
 
 	item = iseg_getItem(deviceSession_, propertyName);
 
@@ -357,7 +318,7 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
     return asynError;
 	}
 
-	// Parameter object contains the fully qualified name to read out an iseg item from data cache
+ std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << "item value:  " << item.value << std::endl;
 	epicsUInt32 seconds = 0;
   epicsUInt32 microsecs = 0;
 	
@@ -371,20 +332,28 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 
 	if( pasynUser->timestamp.secPastEpoch != time.secPastEpoch || pasynUser->timestamp.nsec != time.nsec ) {
 		// set new paramter value and update record val field
-		char* pEnd;
-		epicsFloat64 ival = (epicsFloat64)strtod(item.value,&pEnd) ;
-	
-		status = setDoubleParam( function, ival);
+		dVal = (epicsFloat64)strtod (item.value, NULL);
+		setDoubleParam(addr, function, dVal);
 		pasynUser->timestamp = time;
+		
   }
-	
+ std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << "item value:  " << item.value << std::endl;
 	// update record val field
-  status = (asynStatus) getDoubleParam(function, value);
-	
+	status = (asynStatus) getDoubleParam(addr, function,  &dVal);
+
+  if( status )
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%f",
+                   deviceSession_, functionName, status, function, *value );
+  else        
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%f\n", 
+              deviceSession_, functionName, function, *value );
+							
 	// Update alarms status.
-	pasynUser->alarmStatus = 0; 		// READ
-	pasynUser->alarmSeverity = 0; 	//INVALID		
-	
+//	pasynUser->alarmStatus = 0;
+//	pasynUser->alarmSeverity = 0; 
+//	
 	return asynSuccess;
 }
 
@@ -514,39 +483,235 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
 	*           in pasynUser->errorMessage.
 **/
 asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask ) { 
-	
+
 	static const char *functionName = "writeUInt32Digital";
 	
   int function = pasynUser->reason;
 	
   const char *propertyName;
 	
+	epicsTimeStamp timeStamp; 
+	getTimeStamp(&timeStamp);
+	
+  asynStatus status = asynSuccess;
+	
+	IsegItem item = EmptyIsegItem;
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+  
+	
+	char sVal[20];
+
+	itemIter it = isegHalItemsLookup.find( function );
+	
+	if (it != isegHalItemsLookup.end() ) {
+		
+		if(it->second == "Status") {
+			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+								<< " thread: " << "Write Item: " << it->second <<"\033[0m" << std::endl;
+			return asynSuccess;
+		}
+	} else {
+		
+		return asynError;
+	}
+	
+	// Test if interface is connected to isegHAL server
+  if( !devConnected( this->deviceSession_ ) ) {
+			// If we have no camera, then just fail 
+			return asynError;
+  }
+
+	getParamName(function, &propertyName);
+
+	if (propertyName == NULL) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+      return asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "RW" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// READ
+		pasynUser->alarmSeverity = 3; 	//INVALID
+		
+    return asynError;
+  }
+
+	epicsSnprintf(  sVal, WRITE_LEN, "%d", (value & mask) );
+
+  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "%s:%s: Error while writing value '%d' for %s : %s",
+      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+			
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+	}
+	
+	// update value of parameter
+	status = (asynStatus) setUIntDigitalParam(function, value, mask );
+	/* Do callbacks so higher layers see any changes */
+	status = (asynStatus) callParamCallbacks();
+	
+  if( status ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%d",
+                   deviceSession_, functionName, status, function, value );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 		// Write
+		pasynUser->alarmSeverity = 3; 	// INVALID
+
+	}
+
+  else {
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%d\n", 
+              deviceSession_, functionName, function, value );
+	}       
+
+  /* Get the current timestamp */
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
+
+	return status; 
+}
+
+
+char * parseItem(const char *function) {
+    size_t len;
+    const char *p;
+    const char *pnext;
+		pnext = function;
+		
+		for(len=0; *pnext && isalpha(*pnext); len++, pnext++){}
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+								<< " thread: " << "Write Item: " << pnext <<"\033[0m" << std::endl;
+	 return NULL;
+}
+asynStatus drvAsynIseghalService::readInt32(asynUser *pasynUser, epicsInt32 *value) { 
+	
+
+	static const char *functionName = "readInt32";
+	
+  int function = pasynUser->reason;
+  asynStatus status = asynSuccess;
+  const char *propertyName;
+	IsegItem item = EmptyIsegItem;
+	epicsInt32 iVal = 0;
+	char* tmp;
+
+	// Test if interface is connected to isegHAL server
+  if( !devConnected( this->deviceSession_ ) ) {
+			// If we have no camera, then just fail 
+		return asynError;
+  }
+
+	getParamName(function, &propertyName);
+
+	if (propertyName == NULL) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+    return asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "R" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 1; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+  }
+
+	item = iseg_getItem(deviceSession_, propertyName);
+
+  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "%s:%s: Error while reading from %s : %s",
+      deviceSession_, functionName, propertyName, strerror( errno ) );
+			
+		// Update alarms status.
+		pasynUser->alarmStatus = 1; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+	}
+
+	epicsUInt32 seconds = 0;
+  epicsUInt32 microsecs = 0;
+	
+  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
+		return asynError;
+	}
+
+  epicsTimeStamp time;
+  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
+  time.nsec = microsecs * 100000;
+
+	if( pasynUser->timestamp.secPastEpoch != time.secPastEpoch || pasynUser->timestamp.nsec != time.nsec ) {
+		// set new paramter value and update record val field
+		iVal = (epicsInt32)atoi(item.value);
+		setIntegerParam(function, iVal);
+		pasynUser->timestamp = time;
+		
+  }
+
+	// update record val field
+	status = (asynStatus)  getIntegerParam(function,  &iVal);
+
+  if( status )
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%d",
+                   deviceSession_, functionName, status, function, *value );
+  else        
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%d\n", 
+              deviceSession_, functionName, function, *value );
+							
+	// Update alarms status.
+	pasynUser->alarmStatus = 0;
+	pasynUser->alarmSeverity = 0;
+	
+	return asynSuccess;
+}
+asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 value) { 
+
+	static const char *functionName = "writeInt32";
+	
+  int function = pasynUser->reason;
+	
+  const char *propertyName;
+	
+	epicsTimeStamp timeStamp; 
+	getTimeStamp(&timeStamp);
+	
   asynStatus status = asynSuccess;
 	
 	IsegItem item = EmptyIsegItem;
 	
-	epicsUInt32 iVal = 0;
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	char sVal[20];
+	getParamName(function, &propertyName);
+	parseItem(propertyName);
+
 	return asynSuccess; 
 }
-
-
-
-asynStatus drvAsynIseghalService::readInt32(asynUser *pasynUser, epicsInt32 *value){ return asynSuccess; }
-asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 value){ return asynSuccess; }
 asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason){ return asynSuccess; }
 asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual){ return asynSuccess; }
 
@@ -559,10 +724,167 @@ static const char *skipWhite(const char *pstart, int underscoreOk){
 }
 
 int drvAsynIseghalService::hasIsegHalItem (const char *item) {
-/* 	std::vector< std::string >::iterator it;
+	std::vector< std::string >::iterator it;
 	it = std::find( validIsegHalItems.begin(), validIsegHalItems.end(), std::string(item) );
-  if( it != validIsegHalItems.end() ) return true; */
+  if( it != validIsegHalItems.end() ) return true;
 	return false;
+}
+
+asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize ) {
+
+	static const char *functionName = "drvUserCreate";
+
+  /* the parameter is of format TYPE_item($(ADDR)) where Type is INT for int, DBL for double, or STR for string and DIG for UINT32DIGITAL
+  * The fully qualified name (FQN) for gettting/setting an item value is ADDR.item, this is used to create the corresponding iseghalitem parameter.
+	*/
+	size_t len;
+  const char *p;
+  const char *pnext;
+	bool sysItem =  0;
+  if (strlen(drvInfo) > 4 ) {
+		
+    pnext = skipWhite(drvInfo,0);
+		p = pnext;
+		
+		for(len=0; *pnext && isalpha(*pnext); len++, pnext++){}
+		
+		if(*pnext==0) {
+        epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+            "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
+        return asynError;
+		}
+		
+		char halItemType[len+1];
+		halItemType[len] = 0;
+		strncpy(halItemType, p, len);
+
+		//next is item
+		p = skipWhite(pnext,1);
+		pnext = p;
+
+		if(*p==0 || !isupper(*p)) {
+        epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+            "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
+        return asynError;
+		}
+		
+		
+		for(len=0; *p && isalpha(*p); len++, p++){}
+		// 3: we expect 2  additional character for control param address
+		int len_ = len+4;
+		char halItem[len];
+		char tmp[len_];
+
+		strncpy(halItem, pnext, len);
+		*(halItem+len)=0x0; // terminate string
+						/* std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+									<< " thread: " << "Item:" << halItem << "\033[0m" << std::endl; */
+    // Check we have this iseghal item
+		if (!this->hasIsegHalItem(halItem)) {
+      asynPrint(pasynUser, ASYN_TRACE_ERROR,
+                "\033[0;33m %s:%s: Parameter '%s' doesn't exist on iseghal item list\n\033[0m",
+                driverName, functionName, halItem);
+					// Update alarms status.
+			pasynUser->alarmStatus = 17; 		// UDF
+			pasynUser->alarmSeverity = 3; 	// INVALID
+      return asynError;
+    }
+		
+
+		if(strcmp(halItem, "Control") == 0) {
+
+			p++; // skip this ':'
+			pnext = p;
+			
+			for(len=0; *p && isdigit(*p); len++, p++){}
+			char ctrlAddr[len+1];
+			strncpy(ctrlAddr, pnext, len);
+			epicsSnprintf(tmp, len_, "%s:%s", halItem, ctrlAddr);
+			*(tmp+len_) = 0x0;
+
+		
+		} else {
+			strcpy(tmp, halItem);
+			*(tmp+len_) = 0x0;
+		}
+		
+		char halItemFQN[FQN_LEN];
+		//next is addr, no addr for system items
+		pnext = p;
+		pnext = strstr(p,"(");
+		if(!pnext) {
+			//not a system item?
+			if(strcmp(tmp, "Status") == 0 || strcmp(tmp, "CrateNumber") == 0
+				|| strcmp(tmp, "ModuleNumber") == 0 || strcmp(tmp, "CycleCounter") == 0 || strcmp(tmp, "Configuration") == 0
+				|| strcmp(tmp, "Read") == 0 || strcmp(tmp, "Write ") == 0 || strcmp(tmp, "LogLevel") == 0 
+				|| strcmp(tmp, "LogPath") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
+				|| strcmp(tmp, "SaveConfiguration") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
+				|| strcmp(tmp, "ServerVersion") == 0 || strcmp(tmp, "NetworkTimeout") == 0 || strcmp(tmp, "SessionName") == 0) {
+				// Create fully qualified object for system items
+				strcpy(halItemFQN, tmp);
+	
+			} else {
+				epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+            "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
+				pasynUser->alarmStatus = 17; 		// UDF
+				pasynUser->alarmSeverity = 3; 	// INVALID
+        return asynError;
+			}
+
+		} else {
+			pnext++;
+			p = skipWhite(pnext,0);
+		
+			for(len=0; *p && (*p!=' ') && (*p!=')'); len++, p++){}
+			
+			if(*p==0) {
+				epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
+					"invalid USERPARAM Must be TYPE _/ item(ADDR)");
+							return asynError;
+			}
+			char itemAddr[len+1];
+			strncpy(itemAddr, pnext, len);
+			*(itemAddr+len)=0;
+	
+			// Create fully qualified object for system items
+			epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", itemAddr, tmp);
+		}
+
+/* 			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() 
+								<< " thread: " <<"halItemFQN: " << halItemFQN << "\033[0m" << std::endl;
+		 */
+
+		
+		int index;
+		if (findParam(drvInfo, &index) ) {
+			//Make parameter of the correct type
+			if( strcmp(halItemType, "INT") == 0) {
+					createParam(drvInfo, asynParamInt32, &itemIndex);
+					      setIntegerParam    (itemIndex,                 0);
+			} else if (strcmp(halItemType, "DBL") == 0) {
+					createParam(drvInfo, asynParamFloat64, &itemIndex);
+					setDoubleParam     (itemIndex,               0.);
+			} else if (strcmp(halItemType, "STR") == 0) {
+					createParam(drvInfo, asynParamOctet, &itemIndex);
+			} else if (strcmp(halItemType, "DIG") == 0) {
+					createParam(drvInfo, asynParamUInt32Digital, &itemIndex);
+			} else {
+					asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR,
+											"%s:%s: Expected Type is INT|DBL|STR|DIG. Got '%s'\n", driverName, functionName, halItemType);
+					return asynError;
+			}
+			
+
+			setParamStatus     (itemIndex,                 asynSuccess);
+			pasynUser->reason = itemIndex;
+			isegHalItemsLookup.insert( std::make_pair( itemIndex, std::string(halItemFQN) ) );
+			
+			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "FQN: " << drvInfo << " index: " << itemIndex <<"\033[0m" << std::endl;
+			itemIndex++;
+		}
+	}
+	
+	return asynSuccess;
 }
 
 /**

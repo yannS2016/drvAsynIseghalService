@@ -27,7 +27,7 @@ epicsThreadSleep(2)
 asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_ERROR)
 #asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_WARNING)
 
-dbLoadRecords("../../db/drvAsynIseghalService.db","P=iseghal,R=service,PORT=$(ISEGSESSION), ADDR=0.0.1")
+dbLoadRecords("../../db/drvAsynIseghalService.db","P=iseghal,R=service,PORT=$(ISEGSESSION), ADDR=0.0.0")
 
 
 ## Load record instances
