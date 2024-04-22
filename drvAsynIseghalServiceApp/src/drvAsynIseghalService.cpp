@@ -171,6 +171,89 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value ) {
 
 		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+	static const char *functionName = "readFloat64";
+	
+  int function = pasynUser->reason;
+  asynStatus status = asynSuccess;
+  const char *propertyName;
+	IsegItem item = EmptyIsegItem;
+	epicsFloat64 dVal = 0;
+	char* tmp;
+
+	// Test if interface is connected to isegHAL server
+  if( !devConnected( this->deviceSession_ ) ) {
+			// If we have no camera, then just fail 
+		return asynError;
+  }
+
+	getParamName(function, &propertyName);
+	if (propertyName == NULL) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+    return asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "R" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 1; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+  }
+
+	item = iseg_getItem(deviceSession_, propertyName);
+
+  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "%s:%s: Error while reading from %s : %s",
+      deviceSession_, functionName, propertyName, strerror( errno ) );
+			
+		// Update alarms status.
+		pasynUser->alarmStatus = 1; 		// READ
+		pasynUser->alarmSeverity = 3; 	// INVALID
+		
+    return asynError;
+	}
+
+	epicsUInt32 seconds = 0;
+  epicsUInt32 microsecs = 0;
+	
+  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
+		return asynError;
+	}
+
+  epicsTimeStamp time;
+  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
+  time.nsec = microsecs * 100000;
+
+  // set new paramter value and update record val field
+  dVal = (epicsFloat64)strtod (item.value, NULL);
+  *value = dVal;
+  setDoubleParam (function, dVal );
+  pasynUser->timestamp = time;
+  status = (asynStatus) getDoubleParam(function, &dVal); 
+
+/*	setDoubleParam (function,       dVal );
+  return asynPortDriver::readFloat64(pasynUser, value);*/
+  if( status )
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%f",
+                   deviceSession_, functionName, status, function, *value );
+  else        
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%f\n", 
+              deviceSession_, functionName, function, *value );
+							
+	// Update alarms status.
+	pasynUser->alarmStatus = 0;
+	pasynUser->alarmSeverity = 0;
   
 	return asynSuccess;
 }
@@ -261,17 +344,16 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
   time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
   time.nsec = microsecs * 100000;
 
-	if( pasynUser->timestamp.secPastEpoch != time.secPastEpoch || pasynUser->timestamp.nsec != time.nsec ) {
-		// set new paramter value and update record val field
-		
-		iVal = (epicsUInt32)atoi(item.value);
+
+  iVal = (epicsUInt32)atoi(item.value);
+  *value = iVal;
 		status = (asynStatus) setUIntDigitalParam(function, iVal, mask );
 		pasynUser->timestamp = time;
-		
-  }
-	
 	// update record val field
 	status = (asynStatus) getUIntDigitalParam(function, &iVal, mask );
+
+/*	setDoubleParam (function,       dVal );
+  return asynPortDriver::readFloat64(pasynUser, value);*/
 	
   if( status ) 
 		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
@@ -595,6 +677,8 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 					createParam(halItemFQN, asynParamInt32, &itemIndex);
 			} else if (strcmp(halItemType, "DBL") == 0) {
 					createParam(halItemFQN, asynParamFloat64, &itemIndex);
+// needed for  M1 using set and get method to update rec val field
+         // setDoubleParam (itemIndex,       0.0);
 			} else if (strcmp(halItemType, "STR") == 0) {
 					createParam(halItemFQN, asynParamOctet, &itemIndex);
 			} else if (strcmp(halItemType, "DIG") == 0) {
