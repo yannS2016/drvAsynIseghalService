@@ -145,7 +145,7 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 	interface_  	= epicsStrDup( interface );
 	deviceModel_	= epicsStrDup( icsCtrtype );
 	self_ = pasynUserSelf;
-
+  //pasynManager->setAutoConnectTimeout(2.0)
 	/* Register the shutdown function for epicsAtExit */
 	epicsAtExit(iseghalSessionShutdown, (void*)this);
 	itemIndex = 0;
@@ -255,8 +255,8 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 	// Update alarms status.
 	pasynUser->alarmStatus = 0;
 	pasynUser->alarmSeverity = 0;
-  
-	return asynSuccess;
+
+	return asynError;
 }
 
 /**
@@ -582,21 +582,82 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
 	static const char *functionName = "writeInt32";
 	
   int function = pasynUser->reason;
-	
   const char *propertyName;
-	
-	epicsTimeStamp timeStamp; 
-	getTimeStamp(&timeStamp);
-	
+	epicsTimeStamp timeStamp; getTimeStamp(&timeStamp);
+
   asynStatus status = asynSuccess;
-	
 	IsegItem item = EmptyIsegItem;
+	
 	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-  
 
 	char sVal[20];
+	
+	// Test if interface is connected to isegHAL server
+  if( !devConnected( this->deviceSession_ ) ) {
+			// If we have no camera, then just fail 
+			return asynError;
+  }
+
 	getParamName(function, &propertyName);
 
+	if (propertyName == NULL) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+      return asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "RW" ) != 0) {
+
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2;
+		pasynUser->alarmSeverity = 3;
+		
+    return asynError;
+  }
+
+	epicsSnprintf(  sVal, WRITE_LEN, "%d", value);
+
+  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+      "%s:%s: Error while writing value '%d' for %s : %s",
+      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+			
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 
+		pasynUser->alarmSeverity = 3;
+		
+    return asynError;
+	}
+	
+	// update value of parameter
+	status = (asynStatus) setIntegerParam(function, value);
+
+	status = (asynStatus) callParamCallbacks();
+	
+  if( status ) {
+		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize, 
+                   "%s:%s: status=%d, function=%d, value=%d",
+                   deviceSession_, functionName, status, function, value );
+		// Update alarms status.
+		pasynUser->alarmStatus = 2; 
+		pasynUser->alarmSeverity = 3;
+
+	}
+
+  else {
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, 
+               "%s:%s: function=%d, value=%d\n", 
+              deviceSession_, functionName, function, value );
+	}       
+
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
 
 	return asynSuccess; 
 }
@@ -760,10 +821,12 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 			//Make parameter of the correct type
 			if( strcmp(halItemType, "INT") == 0) {
 					createParam(halItemFQN, asynParamInt32, &itemIndex);
+        // Stop asynInt32 to do an intial readmenaing call to intread32 from main
+       // setIntegerParam (itemIndex,       0);
 			} else if (strcmp(halItemType, "DBL") == 0) {
 					createParam(halItemFQN, asynParamFloat64, &itemIndex);
-// needed for  M1 using set and get method to update rec val field
-         // setDoubleParam (itemIndex,       0.0);
+
+         //setDoubleParam (itemIndex,       0.0);
 			} else if (strcmp(halItemType, "STR") == 0) {
 					createParam(halItemFQN, asynParamOctet, &itemIndex);
 			} else if (strcmp(halItemType, "DIG") == 0) {
