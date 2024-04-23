@@ -30,7 +30,7 @@
 #include <epicsAssert.h>
 #include <epicsString.h>
 #include <iocsh.h>
-
+#include <initHooks.h>
 // ASYN includes
 #include <asynPortDriver.h>
 
@@ -48,6 +48,8 @@ static const char *driverName = "drvAsynIseghalService";
 //_____ D E F I N I T I O N S __________________________________________________
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
+bool initStatus = false;
+epicsMutexId      hookMutexId;
 /** Connect to iseg device
 	*
 	* This method finds or connect to a device.  It is called from the driver constructor.
@@ -123,16 +125,26 @@ static void iseghalSessionShutdown( void* arg) {
     pasynManager->unlockPort(pPvt->self_);
 
 }
+// all record have been initialized
+static void trace(initHookState state) {
+		if (state == initHookAfterFinishDevSup) {
+			epicsMutexLock(hookMutexId);
+			initStatus = 1;
+			epicsMutexUnlock(hookMutexId);
+		}
+
+		printf("iocInit: Reached %d:%s\n", state, initHookName(state));
+}
 
 drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
 	: asynPortDriver( portName,
 		1, // maxAddr
 		NUM_ISEGHAL_SERVICE_PARAMS,
 		// Interface mask
-		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynDrvUserMask | asynOctetMask,
+		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask | asynDrvUserMask,
 		asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
 		ASYN_CANBLOCK | ASYN_MULTIDEVICE, // asynFlags.
-		autoConnect, // Autoconnect
+		1, // Autoconnect
 		0, // Default priority
 		0 ), // Default stack size
 		pollTime_(DEFAULT_POLL_TIME)
@@ -150,15 +162,22 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
   createParam( P_ISEGHAL_SERVICE_CHANISET_STRING,             asynParamFloat64,       &P_ChanISet );
   createParam( P_ISEGHAL_SERVICE_CHANVMOM_STRING,             asynParamFloat64,       &P_ChanVMom );
   createParam( P_ISEGHAL_SERVICE_CHANIMOM_STRING,             asynParamFloat64,       &P_ChanIMom );
-	 setDoubleParam (P_ChanVMom,       1.0);
+	setDoubleParam (P_ChanVMom,       1.0);
 	
 	/* Register the shutdown function for epicsAtExit */
 	epicsAtExit(iseghalSessionShutdown, (void*)this);
+	hookMutexId = epicsMutexCreate();
+	initHookRegister(trace);
 	itemIndex = 0;
+
 }
 
 
-asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ return asynSuccess; }
+asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value ){ 
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " <<  "\033[0m" << std::endl;
+
+return asynSuccess; 
+}
 
 /*
 *  @brief   Called when asyn clients call pasynFloat64->read().
@@ -178,31 +197,19 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
   const char *propertyName;
 	IsegItem item = EmptyIsegItem;
 	epicsFloat64 dVal = 0;
+	bool initDone = 0;
+	
 	char* tmp;
-
-	// Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-			// If we have no camera, then just fail 
-		return asynError;
-  }
-
-	getParamName(function, &propertyName);
-
-	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "Property Name: " <<propertyName <<  "\033[0m" << std::endl;
-
-  dVal = 9.5;
 	
-/* M2: set value, set double param, and then getdouble param
-   *value = dVal;
-   setDoubleParam (function, dVal );
-	 status = (asynStatus) getDoubleParam(function, &dVal); 
-*/
+	epicsMutexLock(hookMutexId);
+	initDone = initStatus;
+	epicsMutexUnlock(hookMutexId);
 	
-/*M1: set double parameter and calls base class method
-	setDoubleParam (function,       dVal );
-  return asynPortDriver::readFloat64(pasynUser, value);
-*/
-	//return asynSuccess;
+	if(initDone)
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " <<  "\033[0m" << std::endl;
+
+
+	return asynSuccess;
 }
 
 /**
@@ -260,45 +267,6 @@ asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *va
 asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << std::endl;
 
-	if( devConnected( deviceSession_ ) )	{
-		epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Link to %s already open!", deviceSession_, interface_ );
-    return asynError;
-	}
-
-  asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
-             "%s: Open connection to %s\n", deviceSession_, interface_ );
-
-	if( !devConnect(deviceSession_, interface_) ) {
-    epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Can't open %s: %s", deviceSession_, interface_, strerror( errno ) );
-    return asynError;
-	}
-	
-/* check devices is responsive.
-	* modelBA: iseg iCS based HV system controller model: cc24 for crate type
-	* icsmini based system will expose the first crate controller module model i.e MICC.
-*/
-
-	char modelBA[15];
-	// icsmini default
-	strcpy(modelBA, "0.0.Article");
-
-	if( strcmp( deviceModel_, "cc24" ) == 0 ) {
-		strcpy(modelBA, "0.100.Article");
-	}
-
-
-  IsegItem model = iseg_getItem( deviceSession_, modelBA );
-  if( strcmp( model.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-
-    epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "\033[31;1m%s: Error while reading from device (Q: %s): %s\033[0m", deviceSession_, model.quality, strerror( errno ) );
-    return asynError;
-  }
-	else {
-				printf("\033[0;32m iCS controller model: %s\n\033[0m", model.value);
-	}
 	pasynManager->exceptionConnect( pasynUser );
 
 	return asynSuccess;
@@ -323,7 +291,9 @@ asynStatus drvAsynIseghalService::disconnect(asynUser *pasynUser) {
                    "%s: cannot diconnect from %s ", deviceSession_, interface_ );
     return asynError;
 	}
-
+	// asyn does not consider that the port is connected unless this call is made
+	// other is record processing will recall connect.
+	// with auto connect and this init read from output record works.
 	pasynManager->exceptionDisconnect(pasynUser);
 
 	return asynSuccess;

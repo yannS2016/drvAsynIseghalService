@@ -18,15 +18,13 @@ epicsEnvSet(ISEGIFACE, "$(HAL_SERVER):$(HAL_PORT)/$(IFACE),$(USER),$(PASSWORD)")
 dbLoadDatabase "$(TOP)/dbd/drvAsynIseghalService.dbd"
 drvAsynIseghalService_registerRecordDeviceDriver pdbbase
 
-
 ## Load ISEGHAL service driver
 drvAsynIseghalServiceConfig( "$(ISEGSESSION)", "$(ISEGIFACE)", "icsmini", 1 )
 
 epicsThreadSleep(2)
 
-asynSetTraceMask ($(ISEGSESSION),0,ASYN_TRACE_WARNING|ASYN_TRACE_ERROR|ASYN_TRACE_DRIVER|ASYN_TRACEIO_DRIVER)
-
-
+asynSetTraceMask("$(ISEGSESSION)", 0, ERROR|FLOW|DRIVER|WARNING)
+#asynSetTraceMask("$(ISEGSESSION)", 0, ERROR)
 dbLoadRecords("../../db/drvAsynIseghalService.db","P=iseghal,R=service,PORT=$(ISEGSESSION), ADDR=0.0.0")
 
 

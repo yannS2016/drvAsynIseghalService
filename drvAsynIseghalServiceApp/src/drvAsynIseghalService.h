@@ -27,7 +27,7 @@
 #include <map>
 #include <vector>
 #include "asynPortDriver.h"
-
+#include <epicsMutex.h>
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
 //_____ D E F I N I T I O N S __________________________________________________
@@ -217,6 +217,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		virtual	asynStatus disconnect(asynUser *pasynUser);
 		
 		asynUser          *self_;	
+		epicsMutexId      hookmutexId;
 		int devConnect( std::string const& name, std::string const& interface );
  		int devConnected( std::string const& name );
 		int devDisconnect( std::string const& name );
@@ -383,7 +384,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		epicsUInt32					pollTime_;
 		std::vector< std::string > session_;
 		std::map<std::string, epicsUInt32> isegHalItemsLookup;
-		
+		bool initStatus_;
 
 	
 
