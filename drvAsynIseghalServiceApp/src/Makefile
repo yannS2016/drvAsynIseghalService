@@ -27,7 +27,7 @@ drvAsynIseghalService_LIBS += $(EPICS_BASE_IOC_LIBS)
 drvAsynIseghalService_DBD += base.dbd
 drvAsynIseghalService_DBD += asyn.dbd
 drvAsynIseghalService_DBD += drvAsynIseghalServiceVersion.dbd
-drvAsynIseghalService_DBD += drvAsynIseghalServiceSupport.dbd
+#drvAsynIseghalService_DBD += drvAsynIseghalServiceSupport.dbd
 #=============================
 # Auto-generate a header file containing a version string.
 # Version comes from the VCS if available, else date+time.
