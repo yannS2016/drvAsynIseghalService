@@ -30,7 +30,7 @@
 #include <epicsAssert.h>
 #include <epicsString.h>
 #include <iocsh.h>
-
+#include <initHooks.h>
 // ASYN includes
 #include <asynPortDriver.h>
 
@@ -45,9 +45,11 @@ static const char *driverName = "drvAsynIseghalService";
 #define DEFAULT_POLL_TIME 0.01
 #define WRITE_LEN 20
 #define FQN_LEN 34
-//_____ D E F I N I T I O N S __________________________________________________
+
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
+short initStatus = 0;
+epicsMutexId      hookMutexId;
 /** Connect to iseg device
 	*
 	* This method finds or connect to a device.  It is called from the driver constructor.
@@ -124,6 +126,17 @@ static void iseghalSessionShutdown( void* arg) {
 
 }
 
+// all record have been initialized
+static void finishDevSup(initHookState state) {
+		if (state == initHookAfterFinishDevSup) {
+			epicsMutexLock(hookMutexId);
+			initStatus = 1;
+			epicsMutexUnlock(hookMutexId);
+		}
+
+		printf("iocInit: Reached %d:%s\n", state, initHookName(state));
+}
+
 drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
 	: asynPortDriver( portName,
 		1, // maxAddr
@@ -149,6 +162,8 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 	/* Register the shutdown function for epicsAtExit */
 	epicsAtExit(iseghalSessionShutdown, (void*)this);
 	itemIndex = 0;
+	hookMutexId = epicsMutexCreate();
+	initHookRegister(finishDevSup); 
 }
 
 
@@ -179,8 +194,16 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 	IsegItem item = EmptyIsegItem;
 	epicsFloat64 dVal = 0;
 	char* tmp;
+ short afterInit = 0;
 	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
- 
+
+	epicsMutexLock(hookMutexId);
+	afterInit = initStatus;
+	epicsMutexUnlock(hookMutexId);
+	
+	if(afterInit != 1)
+   	return asynError;
+    
 	// Test if interface is connected to isegHAL server
   if( !devConnected( this->deviceSession_ ) ) {
 			// If we have no camera, then just fail 
@@ -256,7 +279,7 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 	pasynUser->alarmStatus = 0;
 	pasynUser->alarmSeverity = 0;
 
-	return asynError;
+	return asynSuccess;
 }
 
 /**
@@ -286,7 +309,17 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
 	IsegItem item = EmptyIsegItem;
 	
 	epicsUInt32 iVal = 0;
+
+ short afterInit = 0;
+	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+
+	epicsMutexLock(hookMutexId);
+	afterInit = initStatus;
+	epicsMutexUnlock(hookMutexId);
 	
+	if(afterInit == 1)
+   	return asynError;
+    
  // Test if interface is connected to isegHAL server
   if( !devConnected( this->deviceSession_ ) ) {
 			// If we have no camera, then just fail 
@@ -498,7 +531,15 @@ asynStatus drvAsynIseghalService::readInt32(asynUser *pasynUser, epicsInt32 *val
 	epicsInt32 iVal = 0;
 	char* tmp;
 
+ short afterInit = 0;
 	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+
+	epicsMutexLock(hookMutexId);
+	afterInit = initStatus;
+	epicsMutexUnlock(hookMutexId);
+	
+	if(afterInit != 1)
+   	return asynError;
  
 	// Test if interface is connected to isegHAL server
   if( !devConnected( this->deviceSession_ ) ) {
@@ -856,7 +897,7 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
- std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: "<<"\033[0m" << std::endl;
+ std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread "<<"\033[0m" << std::endl;
 
 	if( devConnected( deviceSession_ ) )	{
 		epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
