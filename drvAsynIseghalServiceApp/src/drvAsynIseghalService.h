@@ -67,7 +67,7 @@ std::vector<std::string> validIsegHalItems
 	 "Temperature" ,
 	 "Supply",
 	 "Article",
-	 
+
 	 // device/module items
 	 "SerialNumber",
 	 "SampleRate",
@@ -79,10 +79,10 @@ std::vector<std::string> validIsegHalItems
 	 "DoClear",
 	 "FineAdjustment",
 	 "KillEnable" ,
-	 
+
 	// MICC option
 	 "HighVoltageOk",
-	 
+
 	 // Channel items
    "VoltageSet",
    "CurrentSet",
@@ -96,16 +96,16 @@ std::vector<std::string> validIsegHalItems
    "DelayedTripTime",
    "ExternalInhibitAction",
    "TemperatureTrip",
-	 
+
 	 // Option Voltage controlled by temperature (VCT)
    "TemperatureExternal",
    "VctCoefficient",
-	 
+
 	 // Option STACK
    "Resistance",
    "VoltageRampPriority",
    "VoltageBottom",
-	 
+
 	 // Option Reversible
    "OutputMode",
    "OutputModeList",
@@ -157,7 +157,7 @@ std::vector<std::string> validIsegHalItems
 };
 
 
-/* maximum number of iseghal supported items 
+/* maximum number of iseghal supported items
 	* system - system information
 	* line - hardware interface or virtual line (0..15)
 	* device - module (0..63), crate (1000, 2000..2015)
@@ -170,8 +170,8 @@ std::vector<std::string> validIsegHalItems
 /* asynPortDriver for ISEG  iCS based HV systems (CC24 and iCSmini) using iseghal service library
 	*
 	* This asynPortDriver is the device support for ISEG Spezialelektronik GmbH iCS HV system starting at version 2.8.0 using the isegHALService
-	* to provide a multiple devices access to modules in an ECH or MPOD crate in combination with CC24 (ECHxxx & wiener MPOD crate access) 
-	* or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported. 
+	* to provide a multiple devices access to modules in an ECH or MPOD crate in combination with CC24 (ECHxxx & wiener MPOD crate access)
+	* or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported.
 	*
 */
 class drvAsynIseghalService : public asynPortDriver {
@@ -189,8 +189,8 @@ class drvAsynIseghalService : public asynPortDriver {
     virtual asynStatus drvUserCreate(asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize );
 		virtual	asynStatus connect(asynUser *pasynUser);
 		virtual	asynStatus disconnect(asynUser *pasynUser);
-		
-		asynUser          *self_;	
+
+		asynUser          *self_;
 		int devConnect( std::string const& name, std::string const& interface );
  		int devConnected( std::string const& name );
 		int devDisconnect( std::string const& name );
@@ -212,26 +212,26 @@ class drvAsynIseghalService : public asynPortDriver {
 		int P_SysSVers;				//index for Parameter "ServerVersion"
 		int P_SysNetTout;			//index for Parameter "NetworkTimeout"
 		int P_SysSSname;			//index for Parameter "SessionName"
-		
+
 		// for cleanup
-		
+
 		int iseghalItems[NITEMS];
 #define FIRST_ISEGHAL_SERVICE_CMD P_SysStatus
 #define LAST_ISEGHAL_SERVICE_CMD  P_SysSSname
 
 	private:
-	
-       
+
+
 		char		*deviceSession_;
 		char		*interface_;
-		char		*deviceModel_; 					
+		char		*deviceModel_;
 		int 		itemIndex;
 		epicsUInt32					pollTime_;
 		std::vector< std::string > session_;
 		std::map<epicsUInt32, std::string> isegHalItemsLookup;
-		
 
-	
+
+
 
 };
 

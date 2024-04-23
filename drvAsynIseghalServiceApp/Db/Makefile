@@ -17,4 +17,3 @@ DB += user.substitutions
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD EXTRA GNUMAKE RULES BELOW HERE
-
