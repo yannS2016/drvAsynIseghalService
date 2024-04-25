@@ -16,7 +16,7 @@ epicsEnvSet(ISEGIFACE, "$(HAL_SERVER):$(HAL_PORT)/$(IFACE),$(USER),$(PASSWORD)")
 
 ## Register all support components
 dbLoadDatabase "$(TOP)/dbd/drvAsynIseghalService.dbd"
-drvAsynIseghalService_registerRecordDeviceDriver pdbbase
+drvAsynIseghalServiceTest_registerRecordDeviceDriver pdbbase
 
 
 ## Load ISEGHAL service driver
