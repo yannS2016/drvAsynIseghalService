@@ -37,11 +37,18 @@ GENVERSIONMACRO = drvAsynIseghalServiceVERSION
 
 PROD_IOC += drvAsynIseghalServiceTest
 
-# drvAsynIseghalService_registerRecordDeviceDriver.cpp will be created from drvAsynIseghalService.dbd
-drvAsynIseghalServiceTest_SRCS += drvAsynIseghalService_registerRecordDeviceDriver.cpp
-drvAsynIseghalServiceTest_SRCS_DEFAULT += drvAsynIseghalServiceMain.cpp
+DBD += drvAsynIseghalServiceTest.dbd
+
+drvAsynIseghalServiceTest_DBD += base.dbd
+drvAsynIseghalServiceTest_DBD += drvAsynIseghalService.dbd
 
 drvAsynIseghalServiceTest_LIBS += drvAsynIseghalService asyn
+
+# drvAsynIseghalService_registerRecordDeviceDriver.cpp will be created from drvAsynIseghalService.dbd
+drvAsynIseghalServiceTest_SRCS += drvAsynIseghalServiceTest_registerRecordDeviceDriver.cpp
+drvAsynIseghalServiceTest_SRCS_DEFAULT += drvAsynIseghalServiceMain.cpp
+
+
 drvAsynIseghalServiceTest_SYS_LIBS += isegHAL-service
 drvAsynIseghalServiceTest_LIBS += $(EPICS_BASE_IOC_LIBS)
 
