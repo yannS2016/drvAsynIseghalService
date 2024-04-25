@@ -195,6 +195,10 @@ class drvAsynIseghalService : public asynPortDriver {
  		int devConnected( std::string const& name );
 		int devDisconnect( std::string const& name );
 		int hasIsegHalItem (const char *item);
+
+    void iseghalPollerTask(void);
+		bool iseghalExiting_;
+
 	protected:
 		// Values used for pasynUser->reason, and indexes into the parameter library.
 		// system items are not CAN address dependant.

@@ -1,0 +1,75 @@
+record(ao, "$(P)$(R):T1") {
+    #field(PINI, "RUNNING")
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_VoltageSet($(ADDR))")
+
+    info(asyn:READBACK, "1")
+}
+
+record(ao, "$(P)$(R):T2") {
+    #field(PINI, "YES")
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_CurrentSet($(ADDR))")
+#		 info(asyn:READBACK, "1")
+}
+
+record(ai, "$(P)$(R):T3") {
+    field(PINI, "YES")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_VoltageMeasure($(ADDR))")
+#		 info(asyn:READBACK, "1")
+}
+
+record(longout, "$(P)$(R):T4") {
+    #field(PINI, "YES")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_DelayedTripAction($(ADDR))")
+#		 info(asyn:READBACK, "1")
+}
+
+record(ai, "$(P)$(R):T5") {
+    field(PINI, "YES")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_CurrentMeasure($(ADDR))")
+#		 info(asyn:READBACK, "1")
+}
+
+record(stringin, "$(P)$(R):T6") {
+    field(PINI, "RUNNING")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_LogPath")
+}
+
+record(mbbo, "$(P)$(R):T7") {
+    field(DTYP, "asynUInt32Digital")
+    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel")
+    field(ZRVL, "1")
+    field(ZRST, "Log Errors")
+    field(ONVL, "2")
+    field(ONST, "Log Information")
+    field(TWVL, "4")
+    field(TWST, "Log Api Read")
+    field(THVL, "8")
+    field(THST, "Log Api Write")
+    field(FRVL, "32")
+    field(FRST, "Log Hv Can Receive")
+    field(SXVL, "64")
+    field(SXST, "Log Hv Can Read Request")
+    field(SVVL, "128")
+    field(SVST, "Log Hv Can Write Request")
+    field(EIVL, "256")
+    field(EIST, "Log Lv Can Receive")
+    field(NIVL, "512")
+    field(NIST, "Log Lv Can READ Request")
+    field(TEVL, "1024")
+    field(TEST, "Log Lv Can Write Request")
+    field(ELVL, "2048")
+    field(ELST, "Log Scpi Receive")
+    field(TVVL, "4096")
+    field(TVST, "Log Scpi Read Request")
+    field(TTVL, "8192")
+    field(TTST, "Log Scpi Write Request")
+
+    info(asyn:READBACK, "1")
+    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+}
