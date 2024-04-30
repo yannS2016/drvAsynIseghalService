@@ -21,140 +21,30 @@
 // version 1.0.0; Feb. 14, 2024
 //******************************************************************************
 
-#ifndef __ASYN_ISEGHAL_SERVICE_H__
-#define __ASYN_ISEGHAL_SERVICE_H__
+#ifndef __DRVASYNISEGHALSERVICE_H__
+#define __DRVASYNISEGHALSERVICE_H__
 
 #include <map>
 #include <vector>
-#include "asynPortDriver.h"
-
+#include <epicsThread.h>
+#include <asynPortDriver.h>
+#include <drvIsegHalPollerThread.h>
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
 //_____ D E F I N I T I O N S __________________________________________________
 
 // These are the drvInfo strings that are used to identify the parameters.
 // They are used by asyn clients, including standard asyn device support
-std::vector<std::string> validIsegHalItems
-{
-	 "Status",
-	 "EventStatus",
-	 "EventMask",
-	 "Control",
-	 "CrateNumber",
-	 "CrateList",
-	 "ModuleNumber",
-	 "CycleCounter",
-	 "LogLevel",
-	 "LogPath",
-	 "LiveInsertionMode",
-	 "SaveConfiguration",
-	 "EthName",
-	 "EthAddress",
-	 "ServerVersion",
-	 "NetworkTimeout",
-	 "SessionName",
-	 // Can Line items
-	 "BitRate",
-	 // Crate items
-	 "Connected",
-	 "Alive",
-	 "PowerOn",
-	 "FanSpeed",
-	 "SerialNumber",
-	 "DeviceClass",
-	 "FirmwareRelease",
-	 "FirmwareName",
-	 "Temperature" ,
-	 "Supply",
-	 "Article",
 
-	 // device/module items
-	 "SerialNumber",
-	 "SampleRate",
-	 "DigitalFilter",
-	 "VoltageRampSpeed",
-	 "CurrentRampSpeed",
-	 "VoltageLimit"  ,
-	 "CurrentLimit"  ,
-	 "DoClear",
-	 "FineAdjustment",
-	 "KillEnable" ,
 
-	// MICC option
-	 "HighVoltageOk",
-
-	 // Channel items
-   "VoltageSet",
-   "CurrentSet",
-   "VoltageMeasure"  ,
-   "CurrentMeasure"  ,
-   "VoltageBounds",
-   "CurrentBounds",
-   "VoltageNominal",
-   "CurrentNominal",
-   "DelayedTripAction",
-   "DelayedTripTime",
-   "ExternalInhibitAction",
-   "TemperatureTrip",
-
-	 // Option Voltage controlled by temperature (VCT)
-   "TemperatureExternal",
-   "VctCoefficient",
-
-	 // Option STACK
-   "Resistance",
-   "VoltageRampPriority",
-   "VoltageBottom",
-
-	 // Option Reversible
-   "OutputMode",
-   "OutputModeList",
-   "OutputPolarity",
-	 "OutputPolarityList",
-   "VoltageMode",
-	 "VoltageModeList",
-	 "CurrentMode",
-	 "CurrentModeList",
-	 "VoltageRampSpeedUp",
-	 "VoltageRampSpeedDown",
-	 "VoltageRampSpeedMin",
-	 "VoltageRampSpeedMax",
-	 "CurrentRampSpeedUp",
-   "CurrentRampSpeedDown",
-	 "CurrentRampSpeedMin",
-	 "CurrentRampSpeedMax",
-	 "VoltageTerminalMeasure",
-	 "VoltageRiseRate",
-	 "VoltageFallRate",
-	 "VoltageLowTrip",
-	 "VoltageTrip",
-	 "VoltageTerminalTrip",
-	 "CurrentTrip",
-	 "PowerTrip",
-	 "VoltageTripMax",
-	 "VoltageTerminalTripMax",
-	 "CurrentTripMax",
-	 "TemperatureTripMax",
-	 "PowerTripMax",
-	 "VoltageLowTripTime",
-	 "VoltageTripTime",
-	 "VoltageTerminalTripTime",
-	 "CurrentTripTime",
-	 "TemperatureTripTime",
-	 "PowerTripTime",
-	 "TimeoutTripTime",
-	 "Group",
-	 "Name",
-	 "TripAction",
-	 "VoltageLowTripAction",
-	 "VoltageTripAction",
-	 "VoltageTerminalTripAction",
-	 "CurrentTripAction",
-	 "TemperatureTripAction",
-	 "PowerTripAction",
-	 "TimeoutTripAction",
-	 "UserConfigFlags",
-};
+/**
+ * @brief Private Device Data
+ *
+ * Private data needed by device support routines
+ */
+typedef struct {
+  bool asynProc;                      /**< Timestamp of last change from isegHAL */
+} pasynuser_data_t;
 
 
 /* maximum number of iseghal supported items
@@ -195,10 +85,9 @@ class drvAsynIseghalService : public asynPortDriver {
  		int devConnected( std::string const& name );
 		int devDisconnect( std::string const& name );
 		int hasIsegHalItem (const char *item);
-
+		asynStandardInterfaces getAsynStdIface();
     void iseghalPollerTask(void);
 		bool iseghalExiting_;
-
 	protected:
 		// Values used for pasynUser->reason, and indexes into the parameter library.
 		// system items are not CAN address dependant.
@@ -216,6 +105,7 @@ class drvAsynIseghalService : public asynPortDriver {
 		int P_SysSVers;				//index for Parameter "ServerVersion"
 		int P_SysNetTout;			//index for Parameter "NetworkTimeout"
 		int P_SysSSname;			//index for Parameter "SessionName"
+
 
 		// for cleanup
 
@@ -239,7 +129,7 @@ class drvAsynIseghalService : public asynPortDriver {
 
 };
 
-#define NUM_ISEGHAL_SERVICE_PARAMS (&LAST_ISEGHAL_SERVICE_CMD - &FIRST_ISEGHAL_SERVICE_CMD + 1 + NITEMS)
 
+#define NUM_ISEGHAL_SERVICE_PARAMS (&LAST_ISEGHAL_SERVICE_CMD - &FIRST_ISEGHAL_SERVICE_CMD + 1 + NITEMS)
 
 #endif

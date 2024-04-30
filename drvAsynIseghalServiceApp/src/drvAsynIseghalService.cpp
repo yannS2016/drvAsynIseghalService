@@ -39,6 +39,8 @@
 #include <asynUInt32DigitalSyncIO.h>
 #include <asynOctetSyncIO.h>
 #include <asynCommonSyncIO.h>
+#include <asynEpicsUtils.h>
+
 // local includes
 #include "drvAsynIseghalService.h"
 
@@ -53,9 +55,131 @@ void iseghalPollerTask(void *drvPvt);
 #define FQN_LEN 34
 
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
+epicsMutexId      hookMutexId;
+static drvIsegHalPollerThread *drvIsegHalPollerThread_ = NULL;
 
 short initStatus = 0;
-epicsMutexId      hookMutexId;
+std::vector<std::string> validIsegHalItems
+{
+	 "Status",
+	 "EventStatus",
+	 "EventMask",
+	 "Control",
+	 "CrateNumber",
+	 "CrateList",
+	 "ModuleNumber",
+	 "CycleCounter",
+	 "LogLevel",
+	 "LogPath",
+	 "LiveInsertionMode",
+	 "SaveConfiguration",
+	 "EthName",
+	 "EthAddress",
+	 "ServerVersion",
+	 "NetworkTimeout",
+	 "SessionName",
+	 // Can Line items
+	 "BitRate",
+	 // Crate items
+	 "Connected",
+	 "Alive",
+	 "PowerOn",
+	 "FanSpeed",
+	 "SerialNumber",
+	 "DeviceClass",
+	 "FirmwareRelease",
+	 "FirmwareName",
+	 "Temperature" ,
+	 "Supply",
+	 "Article",
+
+	 // device/module items
+	 "SerialNumber",
+	 "SampleRate",
+	 "DigitalFilter",
+	 "VoltageRampSpeed",
+	 "CurrentRampSpeed",
+	 "VoltageLimit"  ,
+	 "CurrentLimit"  ,
+	 "DoClear",
+	 "FineAdjustment",
+	 "KillEnable" ,
+
+	// MICC option
+	 "HighVoltageOk",
+
+	 // Channel items
+   "VoltageSet",
+   "CurrentSet",
+   "VoltageMeasure"  ,
+   "CurrentMeasure"  ,
+   "VoltageBounds",
+   "CurrentBounds",
+   "VoltageNominal",
+   "CurrentNominal",
+   "DelayedTripAction",
+   "DelayedTripTime",
+   "ExternalInhibitAction",
+   "TemperatureTrip",
+
+	 // Option Voltage controlled by temperature (VCT)
+   "TemperatureExternal",
+   "VctCoefficient",
+
+	 // Option STACK
+   "Resistance",
+   "VoltageRampPriority",
+   "VoltageBottom",
+
+	 // Option Reversible
+   "OutputMode",
+   "OutputModeList",
+   "OutputPolarity",
+	 "OutputPolarityList",
+   "VoltageMode",
+	 "VoltageModeList",
+	 "CurrentMode",
+	 "CurrentModeList",
+	 "VoltageRampSpeedUp",
+	 "VoltageRampSpeedDown",
+	 "VoltageRampSpeedMin",
+	 "VoltageRampSpeedMax",
+	 "CurrentRampSpeedUp",
+   "CurrentRampSpeedDown",
+	 "CurrentRampSpeedMin",
+	 "CurrentRampSpeedMax",
+	 "VoltageTerminalMeasure",
+	 "VoltageRiseRate",
+	 "VoltageFallRate",
+	 "VoltageLowTrip",
+	 "VoltageTrip",
+	 "VoltageTerminalTrip",
+	 "CurrentTrip",
+	 "PowerTrip",
+	 "VoltageTripMax",
+	 "VoltageTerminalTripMax",
+	 "CurrentTripMax",
+	 "TemperatureTripMax",
+	 "PowerTripMax",
+	 "VoltageLowTripTime",
+	 "VoltageTripTime",
+	 "VoltageTerminalTripTime",
+	 "CurrentTripTime",
+	 "TemperatureTripTime",
+	 "PowerTripTime",
+	 "TimeoutTripTime",
+	 "Group",
+	 "Name",
+	 "TripAction",
+	 "VoltageLowTripAction",
+	 "VoltageTripAction",
+	 "VoltageTerminalTripAction",
+	 "CurrentTripAction",
+	 "TemperatureTripAction",
+	 "PowerTripAction",
+	 "TimeoutTripAction",
+	 "UserConfigFlags",
+};
 /** Connect to iseg device
 	*
 	* This method finds or connect to a device.  It is called from the driver constructor.
@@ -119,7 +243,9 @@ static void pCallackOut(asynUser *pasynUser) {
   asynInterface *pasynInterface;
   asynUInt32Digital *pasynUInt32Digital;
 	void *uInt32DigitalPvt;
-	epicsUInt32 value = 6;
+	asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)pasynUser->userData;
+	//epicsUInt32 value = 6;
+	epicsUInt32 uInt32Value = rand() % 50;
 	static const char *functionName="pCallackOut";
 
   pasynInterface = pasynManager->findInterface(pasynUser, asynUInt32DigitalType, 1);
@@ -132,7 +258,8 @@ static void pCallackOut(asynUser *pasynUser) {
 	uInt32DigitalPvt = pasynInterface->drvPvt;
 	// this will call the port readUint32Digital method but from this thread
 	std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
-	pasynUInt32Digital->read(uInt32DigitalPvt, pasynUser, &value, 0xf);
+	//pasynUInt32Digital->read(uInt32DigitalPvt, pasynUser, &value, 0xf);
+	pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
 
 
 
@@ -154,11 +281,17 @@ static void iseghalSessionShutdown( void* arg) {
 
 // all record have been initialized
 static void finishDevSup(initHookState state) {
-		if (state == initHookAfterFinishDevSup) {
+		if (state == initHookAfterIocRunning) {
 			epicsMutexLock(hookMutexId);
 			initStatus = 1;
 			epicsMutexUnlock(hookMutexId);
+			// all record init done: interrupt list filled
+			if(drvIsegHalPollerThread_ != NULL) {
+				drvIsegHalPollerThread_->thread.start();
+				std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " <<  initHookName(state) <<"\033[0m" << std::endl;
+			}
 		}
+
 }
 
 drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
@@ -192,17 +325,6 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
     }
 
 
-
-    /* Create the thread that computes the waveforms in the background */
-    status = (asynStatus)(epicsThreadCreate("iseghalPollerTask",
-                          epicsThreadPriorityMedium,
-                          epicsThreadGetStackSize(epicsThreadStackMedium),
-                          (EPICSTHREADFUNC)::iseghalPollerTask,
-                          this) == NULL);
-    if (status) {
-        printf("%s:%s: epicsThreadCreate failure\n", driverName, functionName);
-        return;
-    }
 		//pasynManager->setAutoConnectTimeout(2.0)
 		/* Register the shutdown function for epicsAtExit */
 		epicsAtExit(iseghalSessionShutdown, (void*)this);
@@ -210,81 +332,30 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 		hookMutexId = epicsMutexCreate();
 		initHookRegister(finishDevSup);
 		itemIndex = 0;
+
+		drvIsegHalPollerThread_ = new drvIsegHalPollerThread(this);
+		if(!drvIsegHalPollerThread_) return;
+
 }
 
 void iseghalPollerTask(void *drvPvt)
 {
     drvAsynIseghalService *pPvt = (drvAsynIseghalService *)drvPvt;
-
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
     pPvt->iseghalPollerTask();
 }
 
-
+asynStandardInterfaces drvAsynIseghalService::getAsynStdIface(){
+	return asynStdInterfaces;
+}
 
 void drvAsynIseghalService::iseghalPollerTask(void)
 {
-    ELLLIST *pclientList;
-    interruptNode *pnode;
-    int offset;
-    int bufferLen;
-    int anyChanged;
-    asynStatus prevIOStatus=asynSuccess;
-		asynStatus status;
-    asynUser *pasynUser;
-			std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
+
+		std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "\033[0m" << std::endl;
 
 		static const char *functionName="iseghalPollerTask";
 
-
-    /* Create an asynUser. FIXME: we should probably create a callback
-     * for the processCallback, which would be called on a queuePortLock ()
-     * so as to not block all addresses, just the ones related to that
-     * specific BOARD */
-    asynUser *pasynUser_ = pasynManager->createAsynUser(pCallackOut, 0);
-    pasynUser_->timeout = 1.0;
-    status = pasynManager->connectDevice(pasynUser_, deviceSession_, 0);
-    if(status != asynSuccess) {
-        asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
-            "%s:%s: connectDevice failed, status=%d\n",
-            driverName, functionName, status);
-        return;
-    }
-
-		while (1) {
-
-			if (iseghalExiting_) break;
-
-        /* See if there are any asynUInt32Digital callbacks registered to be called
-         * when data changes.  These callbacks only happen if the value has changed */
-
-            pasynManager->interruptStart(asynStdInterfaces.uInt32DigitalInterruptPvt, &pclientList);
-            pnode = (interruptNode *)ellFirst(pclientList);
-            asynUInt32DigitalInterrupt *pUInt32D;
-            while (pnode) {
-                pUInt32D = (asynUInt32DigitalInterrupt *)pnode->drvPvt;
-                pasynUser = pUInt32D->pasynUser;
-                asynPrint(pasynUserSelf, ASYN_TRACE_FLOW,
-                              "%s::%s port %s asynUInt32 Digital Interrupt %d\n",
-                              driverName, functionName, this->portName, pasynUser->reason);
-															epicsUInt32 value;
-								pasynUser_->reason = pasynUser->reason;
-								asynStatus status = pasynManager->queueRequest(pasynUser_, (asynQueuePriority)0, 0);
-								if (status != asynSuccess) {
-										asynPrint(pasynUser_, ASYN_TRACE_ERROR,
-												"drvAsynIseghalService::iseghalPollerTask  ERROR calling queueRequest\n"
-												"    status=%d, error=%s\n",
-												status, pasynUser_->errorMessage);
-
-								}
-								epicsUInt32 uInt32Value = 7;
-								pasynUser->auxStatus = 1;
-								//pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
-                pnode = (interruptNode *)ellNext(&pnode->node);
-            }
-            pasynManager->interruptEnd(asynStdInterfaces.uInt32DigitalInterruptPvt);
-
-			epicsThreadSleep(2);
-		}
 }
 
 
@@ -514,7 +585,7 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
 	if(afterInit != 1) return asynError;
 
 	if (iseghalExiting_) return asynSuccess;
-/*
+
  // Test if interface is connected to isegHAL server
   if( !devConnected( this->deviceSession_ ) ) {
 			return asynError;
@@ -528,10 +599,11 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
       deviceSession_, functionName, propertyName);
       return asynError;
   }
+	//std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "stage 3:" << "\033[0m" << std::endl;
 
   IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
 
-  if(strcmp( itemProperty.access, "R" ) != 0) {
+  if(strcmp( itemProperty.access, "RW" ) != 0) {
 
 		epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
@@ -542,6 +614,8 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
 
     return asynError;
   }
+	//std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "stage 4:" << "\033[0m" << std::endl;
+
 
 
 	item = iseg_getItem(deviceSession_, propertyName);
@@ -579,6 +653,8 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
   *value = iVal;
 	status = (asynStatus) setUIntDigitalParam(function, iVal, mask );
 	pasynUser->timestamp = time;
+	pasynUser->alarmStatus = 0;
+	pasynUser->alarmSeverity = 0;
 	status = (asynStatus) getUIntDigitalParam(function, &iVal, mask );
 
   if( status )
@@ -590,15 +666,14 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
                "%s:%s: function=%d, value=%d\n",
               deviceSession_, functionName, function, *value );
 
-	pasynUser->alarmStatus = 0;
-	pasynUser->alarmSeverity = 0;
- */
+	//callParamCallbacks();
 
-   iVal = 6;
+
+/*    iVal = 6;
   *value = iVal;
 	status = (asynStatus) setUIntDigitalParam(function, iVal, mask );
 
-	status = (asynStatus) getUIntDigitalParam(function, &iVal, mask );
+	status = (asynStatus) getUIntDigitalParam(function, &iVal, mask ); */
 
 	return asynSuccess;
 }
