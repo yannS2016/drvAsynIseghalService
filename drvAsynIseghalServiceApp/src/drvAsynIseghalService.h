@@ -29,107 +29,78 @@
 #include <epicsThread.h>
 #include <asynPortDriver.h>
 #include <drvIsegHalPollerThread.h>
-/* These are the drvInfo strings that are used to identify the parameters.
- * They are used by asyn clients, including standard asyn device support */
-//_____ D E F I N I T I O N S __________________________________________________
-
-// These are the drvInfo strings that are used to identify the parameters.
-// They are used by asyn clients, including standard asyn device support
-
-
-/**
- * @brief Private Device Data
- *
- * Private data needed by device support routines
- */
-typedef struct {
-  bool asynProc;                      /**< Timestamp of last change from isegHAL */
-} pasynuser_data_t;
-
 
 /* maximum number of iseghal supported items
-	* system - system information
-	* line - hardware interface or virtual line (0..15)
-	* device - module (0..63), crate (1000, 2000..2015)
-	* channel - high voltage channels (0..63)
+  * system - system information
+  * line - hardware interface or virtual line (0..15)
+  * device - module (0..63), crate (1000, 2000..2015)
+  * channel - high voltage channels (0..63)
 */
 // default: 5 can line max , 21 devices max, 10 channels max
 #define NITEMS 1050
 
-
 /* asynPortDriver for ISEG  iCS based HV systems (CC24 and iCSmini) using iseghal service library
-	*
-	* This asynPortDriver is the device support for ISEG Spezialelektronik GmbH iCS HV system starting at version 2.8.0 using the isegHALService
-	* to provide a multiple devices access to modules in an ECH or MPOD crate in combination with CC24 (ECHxxx & wiener MPOD crate access)
-	* or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported.
-	*
+  *
+  * This asynPortDriver is the device support for ISEG Spezialelektronik GmbH iCS HV system starting at version 2.8.0 using the isegHALService
+  * to provide a multiple devices access to modules in an ECH or MPOD crate in combination with CC24 (ECHxxx & wiener MPOD crate access)
+  * or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported.
+  *
 */
 class drvAsynIseghalService : public asynPortDriver {
-	public:
-		drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
-		// These are the methods that we override from asynPortDriver
-		virtual asynStatus readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask );
-		virtual asynStatus writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask );
-		virtual asynStatus writeFloat64( asynUser *pasynUser, epicsFloat64 value );
-		virtual asynStatus readFloat64( asynUser *pasynUser, epicsFloat64 *value );
-		virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
-		virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
-		virtual asynStatus readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason);
-		virtual asynStatus writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual);
+  public:
+    drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
+    // These are the methods that we override from asynPortDriver
+    virtual asynStatus readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask );
+    virtual asynStatus writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask );
+    virtual asynStatus writeFloat64( asynUser *pasynUser, epicsFloat64 value );
+    virtual asynStatus readFloat64( asynUser *pasynUser, epicsFloat64 *value );
+    virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
+    virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
+    virtual asynStatus readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason);
+    virtual asynStatus writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual);
     virtual asynStatus drvUserCreate(asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize );
-		virtual	asynStatus connect(asynUser *pasynUser);
-		virtual	asynStatus disconnect(asynUser *pasynUser);
+    virtual asynStatus connect(asynUser *pasynUser);
+    virtual asynStatus disconnect(asynUser *pasynUser);
 
-		asynUser          *self_;
-		int devConnect( std::string const& name, std::string const& interface );
- 		int devConnected( std::string const& name );
-		int devDisconnect( std::string const& name );
-		int hasIsegHalItem (const char *item);
-		asynStandardInterfaces getAsynStdIface();
+    int devConnect( std::string const& name, std::string const& interface );
+    int devConnected( std::string const& name );
+    int devDisconnect( std::string const& name );
+    int hasIsegHalItem (const char *item);
+    char *getSessionName ();
+    asynStandardInterfaces getAsynStdIface();
     void iseghalPollerTask(void);
-		bool iseghalExiting_;
-	protected:
-		// Values used for pasynUser->reason, and indexes into the parameter library.
-		// system items are not CAN address dependant.
-		int P_SysStatus;			//index for Parameter "SystemStatus"
-		int P_SysCrtNum;			//index for Parameter "SystemCrateNumber"
-		int P_SysCrtList;			//index for Parameter "SystemCrateList"
-		int P_SysModNum;			//index for Parameter "SystemModuleNumber"
-		int P_SysCCtr;				//index for Parameter "CycleCounter"
-		int P_SysLogL;				//index for Parameter "SystemLogLevel"
-		int P_SysLogPath;			//index for Parameter "LogPath"
-		int P_SysLinMode;			//index for Parameter "LiveInsertionMode"
-		int P_SysSConfig;			//index for Parameter "SaveConfiguration"
-		int P_SysEthName;			//index for Parameter "EthName"
-		int P_SysEthAddr;			//index for Parameter "EthAddress"
-		int P_SysSVers;				//index for Parameter "ServerVersion"
-		int P_SysNetTout;			//index for Parameter "NetworkTimeout"
-		int P_SysSSname;			//index for Parameter "SessionName"
+    bool iseghalExiting_;
+    asynUser *self_;
 
+  protected:
+    // Values used for pasynUser->reason, and indexes into the parameter library.
+    // system items are not CAN address dependant.
+    int P_SysStatus;      //index for Parameter "SystemStatus"
+    int P_SysCrtNum;      //index for Parameter "SystemCrateNumber"
+    int P_SysCrtList;     //index for Parameter "SystemCrateList"
+    int P_SysModNum;      //index for Parameter "SystemModuleNumber"
+    int P_SysCCtr;        //index for Parameter "CycleCounter"
+    int P_SysLogL;        //index for Parameter "SystemLogLevel"
+    int P_SysLogPath;     //index for Parameter "LogPath"
+    int P_SysLinMode;     //index for Parameter "LiveInsertionMode"
+    int P_SysSConfig;     //index for Parameter "SaveConfiguration"
+    int P_SysEthName;     //index for Parameter "EthName"
+    int P_SysEthAddr;     //index for Parameter "EthAddress"
+    int P_SysSVers;       //index for Parameter "ServerVersion"
+    int P_SysNetTout;     //index for Parameter "NetworkTimeout"
+    int P_SysSSname;      //index for Parameter "SessionName"
 
-		// for cleanup
+    int iseghalItems[NITEMS];
 
-		int iseghalItems[NITEMS];
-#define FIRST_ISEGHAL_SERVICE_CMD P_SysStatus
-#define LAST_ISEGHAL_SERVICE_CMD  P_SysSSname
+  private:
 
-	private:
-
-
-		char		*deviceSession_;
-		char		*interface_;
-		char		*deviceModel_;
-		int 		itemIndex;
-		epicsUInt32					pollTime_;
-		std::vector< std::string > session_;
-		std::map<epicsUInt32, std::string> isegHalItemsLookup;
-
-
-
-
+    char  *deviceSession_;
+    char  *interface_;
+    char  *deviceModel_;
+    int   itemIndex;
+    std::vector< std::string > session_;
+    std::map<epicsUInt32, std::string> isegHalItemsLookup;
 };
 
-
-#define NUM_ISEGHAL_SERVICE_PARAMS (&LAST_ISEGHAL_SERVICE_CMD - &FIRST_ISEGHAL_SERVICE_CMD + 1 + NITEMS)
 
 #endif

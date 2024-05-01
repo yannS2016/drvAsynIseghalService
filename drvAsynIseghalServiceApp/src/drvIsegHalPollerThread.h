@@ -29,38 +29,48 @@
 #include <list>
 #include <epicsThread.h>
 
-static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser);
+typedef enum {
+  UINT32DIGITALTYPE = 0,
+  FLOAT64TYPE = 1,
+  INT32TYPE = 2,
+  OCTECTTYPE = 3
+} drvIsegHalPoller_uflags_t;
+
+typedef struct {
+  drvIsegHalPoller_uflags_t uflags;
+  void *intrHandle;
+} intrUser_data_t;
+
 
 class drvAsynIseghalService;
-// @brief   thread monitoring set values from isegHAL
-//
-// This thread checks regulary the value of all set-parameters
-// and updates the corresponding output-records if the values
-// within the EPICS db and the isegHAL are out of sync.
+
+/* @brief   thread monitoring set values from isegHAL
+*
+* This thread checks regulary the value of all set-parameters
+* and updates the corresponding records if the values
+* within the EPICS db and the isegHAL are out of sync.
+*/
 class drvIsegHalPollerThread: public epicsThreadRunable {
- public:
-  drvIsegHalPollerThread(drvAsynIseghalService *portD);
-  virtual ~drvIsegHalPollerThread();
-  virtual void run();
-  epicsThread thread;
+  public:
+    drvIsegHalPollerThread(drvAsynIseghalService *portD);
+    virtual ~drvIsegHalPollerThread();
+    virtual void run();
+    epicsThread thread;
 
-/*   void registerInterrupt( dbCommon* prec, devIsegHal_info_t* pinfo );
-  void cancelInterrupt( const devIsegHal_info_t* pinfo ); */
+    inline void changeIntervall( double val ) { _pause = val; }
+    inline double getIntervall(){ return _pause; }
 
-  inline void changeIntervall( double val ) { _pause = val; }
-  inline double getIntervall(){ return _pause; }
+    inline void setDbgLvl( int dbglvl ) { _debug = dbglvl; }
+    inline void disable() { _run = false; }
+    inline void enable() { _run = true; }
+    bool _drvIsegHalPollerThreadExiting;
 
-  inline void setDbgLvl( int dbglvl ) { _debug = dbglvl; }
-  inline void disable() { _run = false; }
-  inline void enable() { _run = true; }
-
-
- private:
-  bool _run;
-	bool _iseghalExiting;
-  double _pause;
-  unsigned _debug;
-	std::list<asynUser *> pasynUserIntr;
+  private:
+    bool _run;
+    double _pause;
+    unsigned _debug;
+    std::list<asynUser *> _pasynIntrUser;
+    std::list<intrUser_data_t *> _intrUser_data_gbg;
 };
 
 #endif
