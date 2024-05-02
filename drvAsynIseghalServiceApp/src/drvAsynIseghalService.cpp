@@ -40,7 +40,6 @@
 #include "drvAsynIseghalService.h"
 
 static const char *driverName = "drvAsynIseghalService";
-void iseghalPollerTask(void *drvPvt);
 
 #define WRITE_LEN 20
 #define FQN_LEN 34
@@ -322,6 +321,11 @@ asynStatus drvAsynIseghalService::getIsegHalItem (asynUser *isegHalUser, IsegIte
     status = asynError;
   }
 
+  // Test if interface is connected to isegHAL server
+  if( !devConnected( deviceSession_ ) ) {
+    return asynError;
+  }
+
   IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
 
   if(strcmp( itemProperty.access, "R" ) != 0) {
@@ -448,9 +452,8 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 *           asynError or asynTimeout is returned. A error message is stored
 *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value ) {
-
-
+asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value )
+{
   static const char *functionName = "readFloat64";
 
   epicsInt16 function = pasynUser->reason;
@@ -1199,7 +1202,6 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
         return asynError;
     }
 
-
     for(len=0; *p && isalpha(*p); len++, p++){}
     // 3: we expect 2  additional character for control param address
     int len_ = len+4;
@@ -1208,8 +1210,7 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 
     strncpy(halItem, pnext, len);
     *(halItem+len)=0x0; // terminate string
-            /* std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf()
-                  << " thread: " << "Item:" << halItem << "\033[0m" << std::endl; */
+
     // Check we have this iseghal item
     if (!this->hasIsegHalItem(halItem)) {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
@@ -1221,18 +1222,14 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
       return asynError;
     }
 
-
     if(strcmp(halItem, "Control") == 0) {
-
       p++; // skip this ':'
       pnext = p;
-
       for(len=0; *p && isdigit(*p); len++, p++){}
       char ctrlAddr[len+1];
       strncpy(ctrlAddr, pnext, len);
       epicsSnprintf(tmp, len_, "%s:%s", halItem, ctrlAddr);
       *(tmp+len_) = 0x0;
-
 
     } else {
       strcpy(tmp, halItem);
@@ -1281,12 +1278,8 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
       epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", itemAddr, tmp);
     }
 
-/*      std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf()
-                << " thread: " <<"halItemFQN: " << halItemFQN << "\033[0m" << std::endl;
-     */
-
     int index;
-    if (findParam(halItemFQN, &index) ) {
+    if (findParam(halItemFQN, &index) == asynParamNotFound) {
       //Make parameter of the correct type
       if( strcmp(halItemType, "INT") == 0) {
           createParam(halItemFQN, asynParamInt32, &itemIndex);
@@ -1314,7 +1307,9 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 
       std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "FQN: " << halItemFQN << " index: " << itemIndex <<"\033[0m" << std::endl;
       itemIndex++;
-    }
+    } else {
+			pasynUser->reason = index;
+		}
   }
 
   return asynSuccess;
