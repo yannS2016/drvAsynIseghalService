@@ -30,6 +30,10 @@
 #include <asynPortDriver.h>
 #include <drvIsegHalPollerThread.h>
 
+/* isegHAL includes */
+#include <isegclientapi.h>
+
+
 /* maximum number of iseghal supported items
   * system - system information
   * line - hardware interface or virtual line (0..15)
@@ -62,12 +66,15 @@ class drvAsynIseghalService : public asynPortDriver {
     virtual asynStatus connect(asynUser *pasynUser);
     virtual asynStatus disconnect(asynUser *pasynUser);
 
+		asynStatus getIsegHalItem (asynUser *isegHalUser, IsegItem *item);
+
     int devConnect( std::string const& name, std::string const& interface );
     int devConnected( std::string const& name );
     int devDisconnect( std::string const& name );
     int hasIsegHalItem (const char *item);
     char *getSessionName ();
     asynStandardInterfaces getAsynStdIface();
+
     void iseghalPollerTask(void);
     bool iseghalExiting_;
     asynUser *self_;

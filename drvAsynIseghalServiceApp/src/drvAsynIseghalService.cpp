@@ -39,9 +39,6 @@
 // local includes
 #include "drvAsynIseghalService.h"
 
-/* isegHAL includes */
-#include <isegclientapi.h>
-
 static const char *driverName = "drvAsynIseghalService";
 void iseghalPollerTask(void *drvPvt);
 
@@ -305,7 +302,56 @@ asynStandardInterfaces drvAsynIseghalService::getAsynStdIface()
   return asynStdInterfaces;
 }
 
-char * drvAsynIseghalService::getSessionName (){
+asynStatus drvAsynIseghalService::getIsegHalItem (asynUser *isegHalUser, IsegItem *item)
+{
+	static const char *functionName = "readFloat64";
+  const char *propertyName;
+
+  asynStatus status = asynSuccess;
+
+  epicsInt16 function = isegHalUser->reason;
+
+  printf("\033[0;33m%s : %s\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__);
+
+  getParamName(function, &propertyName);
+
+  if (propertyName == NULL) {
+    epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
+      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName);
+    status = asynError;
+  }
+
+  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+
+  if(strcmp( itemProperty.access, "R" ) != 0) {
+
+    epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
+      "\033[31;1m%s:%s Wrong item '%s' permission: Access right: '%s'\033[0m\n",
+      deviceSession_, functionName, propertyName, itemProperty.access );
+
+    isegHalUser->alarmStatus = 1;
+    isegHalUser->alarmSeverity = 3;
+    status = asynError;
+  }
+
+  *item = iseg_getItem(deviceSession_, propertyName);
+
+  if( strcmp( item->quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
+    epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
+      "%s:%s: Error while reading from %s : %s",
+      deviceSession_, functionName, propertyName, strerror( errno ) );
+
+    isegHalUser->alarmStatus = 1;
+    isegHalUser->alarmSeverity = 3;
+
+    status = asynError;
+  }
+
+	return status;
+}
+
+char *drvAsynIseghalService::getSessionName (){
   return deviceSession_;
 }
 

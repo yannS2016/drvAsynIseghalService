@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
+#include <cmath>
 // EPICS includes
 #include <epicsEvent.h>
 #include <epicsExport.h>
@@ -55,21 +55,46 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
   drvIsegHalPoller_uflags_t ifaceType = (drvIsegHalPoller_uflags_t)intrUser->uflags;
   printf("\033[0;33m%s : %s : iface type: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, (epicsInt16)ifaceType );
 
+  IsegItem item = EmptyIsegItem;
+	epicsUInt16 mask;
+	asynStatus status = asynSuccess;
+
+	if(drvAsynIseghalService_)
+		status = drvAsynIseghalService_->getIsegHalItem(pasynUser, &item);
+
   if(ifaceType == UINT32DIGITALTYPE) {
     asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
-    epicsUInt32 uInt32Value = rand() % 50;
+
+    epicsUInt32 uInt32Value;
+		uInt32Value =  (epicsUInt32)atoi(item.value) ;
+		mask = pUInt32D->mask;
+
+		if (mask != 0 ) uInt32Value &= mask;
+
+		if(status != asynSuccess) uInt32Value = NAN;
+		printf("\033[0;33m%s : %s : %d: item value: %s: value: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, __LINE__, item.value,uInt32Value );
     pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
   }
+
   else if (ifaceType == FLOAT64TYPE)
   {
     asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
-    epicsFloat64 float64Value = (epicsFloat64)((rand() % 50)*0.5);
+
+    epicsFloat64 float64Value;
+		float64Value = (epicsFloat64)strtod (item.value, NULL);
+
+		if(status != asynSuccess) float64Value = NAN;
+				printf("\033[0;33m%s : %s : %d: item value: %s: value: %f\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, __LINE__, item.value,float64Value);
     pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
   }
   else if (ifaceType == INT32TYPE)
   {
     asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
-    epicsInt32 int32Value = rand() % 50;
+    epicsInt32 int32Value;
+		int32Value = (epicsInt32)atoi(item.value);
+
+		if(status != asynSuccess) int32Value = NAN;
+				printf("\033[0;33m%s : %s : item value: %s: value: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
     pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
   } else {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
@@ -221,6 +246,7 @@ void drvIsegHalPollerThread::run()
         asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvAsynIseghalService::iseghalPollerTask  ERROR calling queueRequest\n"
               "status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
       }
+			epicsThreadSleep(.1);
     }
   }
 }
