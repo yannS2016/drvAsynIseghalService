@@ -1,0 +1,865 @@
+diff --git a/isegHalRemoteClient/iseghalremote.cpp b/isegHalRemoteClient/iseghalremote.cpp
+index 8c68520..1e51c1b 100644
+--- a/isegHalRemoteClient/iseghalremote.cpp
++++ b/isegHalRemoteClient/iseghalremote.cpp
+@@ -30,6 +30,10 @@
+ #include <QCoreApplication>
+ #include <QSslSocket>
+ 
++#include <QNetworkProxyFactory>
++#include <QThread>
++#include <thread>
++#include <iostream>
+ int IsegHalRemote::m_timeout = IsegHalRemote::DefaultNetworkTimeout;
+ 
+ // Workaround for QTBUG-53798
+@@ -38,218 +42,328 @@ static char g_arg0[] = "iseghalremote";
+ static char *g_argv[] = { g_arg0 };
+ 
+ IsegHalRemote::IsegHalRemote(QObject *parent) :
+-	QObject(parent)
++  QObject(parent)
+ {
+-	m_socket = new QSslSocket(this);
+-	m_socket->setProtocol(QSecureSslProtocols);
+-	m_socket->setPeerVerifyMode(QSslSocket::VerifyNone);
++  m_socket = new QSslSocket(this);
++  m_socket->setProtocol(QSecureSslProtocols);
++  m_socket->setPeerVerifyMode(QSslSocket::VerifyNone);
++  m_socket->setProxy(QNetworkProxy::NoProxy);
++
++  QObject::connect(m_socket, &QAbstractSocket::connected, this, &IsegHalRemote::onConnected);
++  QObject::connect(m_socket, &QAbstractSocket::disconnected, this, &IsegHalRemote::onDisconnected);
++  // https://stackoverflow.com/questions/61677080/error-qabstractsocket-while-installing-mqtt-in-qt-c
++  QObject::connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &IsegHalRemote::onErr);
++  QObject::connect(m_socket, &QAbstractSocket::stateChanged, this, &IsegHalRemote::onStateChanged);
++
++  connected = false;
++  conError = false;
++  if (!QCoreApplication::instance())
++    new QCoreApplication(g_argc, g_argv);
++}
++
++void IsegHalRemote::onConnected()
++{
++  std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET CONNECTED\033[0m" << std::endl;
++  connected = true;
++  conError = false;
++}
++
++//(onErr) Error occured
++//(onStateChanged) Socket state: ClosingState
++//(onStateChanged) Socket state: UnconnectedState
++//(onDisconnected)  Disconnected!
++
++void IsegHalRemote::onDisconnected()
++{
++  std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET DISCONNECTED\033[0m" << std::endl;
++  //QTimer::singleShot(0, this, &IsegHalRemote::isegConnect);
++  connected = false;
++
++}
++
++void IsegHalRemote::onErr(QAbstractSocket::SocketError error)
++{
++  std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR OCCURED\033[0m" << std::endl;
++  switch (error)
++  {
++    case QAbstractSocket::AddressInUseError:
++        std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Address is already in use\033[0m" << std::endl;
++        break;
++    case QAbstractSocket::ConnectionRefusedError:
++        std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Connection refused\033[0m" << std::endl;
++        break;
++    case QAbstractSocket::HostNotFoundError:
++        std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Host not found\033[0m" << std::endl;
++        break;
++    case QAbstractSocket::RemoteHostClosedError:
++        std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Remote host closed\033[0m" << std::endl;
++        break;
++    default:
++        break;
++  }
++
++  conError = true;
++  m_socket->disconnectFromHost();
++}
++
++void IsegHalRemote::onStateChanged(QAbstractSocket::SocketState socketState)
++{
++  std::string stateTostr("");
++  switch (socketState)
++  {
++  case QAbstractSocket::UnconnectedState:
++      stateTostr =  "UnconnectedState";
++     break;
++  case QAbstractSocket::HostLookupState:
++      stateTostr =  "HostLookupState";
++      break;
++  case QAbstractSocket::ConnectingState:
++       stateTostr =  "ConnectingState";
++      break;
++  case QAbstractSocket::ConnectedState:
++       stateTostr =  "ConnectedState";
++      break;
++  case QAbstractSocket::BoundState:
++       stateTostr =  "BoundState";
++      break;
++  case QAbstractSocket::ClosingState:
++       stateTostr =  "ClosingState";
++      break;
++  case QAbstractSocket::ListeningState:
++       stateTostr =  "ListeningState";
++      break;
++  }
++  std::cout <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET STATE: "
++            << stateTostr << "\033[0m"<< std::endl;
++}
+ 
+-	if (!QCoreApplication::instance())
+-		new QCoreApplication(g_argc, g_argv);
++// if not error and not connected then call connect: not connected
++// at this stage error is false and connect is true: connected
++// if error is true and connect is false: not connected
++bool IsegHalRemote::isConnected()
++{
++  return connected;
++}
++
++bool IsegHalRemote::isConnError()
++{
++  return conError;
+ }
+ 
+ bool IsegHalRemote::connectToHostEncrypted(const QString &host, quint16 port)
+ {
+-	m_socket->connectToHostEncrypted(host, port);
+-	return m_socket->waitForEncrypted(timeout());
++
++ m_socket->connectToHostEncrypted(host, port);
++ if (!m_socket->waitForEncrypted(timeout())){
++     qCritical() <<  m_socket->errorString();
++     return false;
++ }
++  return true;
+ }
+ 
+ QByteArray IsegHalRemote::writeReadSynchronous(const QByteArray &data) const
+ {
+-	m_socket->write(data);
+-	if (!m_socket->waitForBytesWritten(timeout()))
+-		return QByteArray();
+ 
+-	m_socket->waitForReadyRead(timeout());
+-	const QByteArray read = m_socket->readAll();
++  m_socket->write(data);
++  if (!m_socket->waitForBytesWritten(timeout()))
++    return QByteArray();
++
++  m_socket->waitForReadyRead(timeout());
++  const QByteArray read = m_socket->readAll();
+ 
+-	QCoreApplication::instance()->processEvents();
++  QCoreApplication::instance()->processEvents();
+ 
+-	return read;
++  return read;
+ }
+ 
+ static QByteArray readResult(char type, const QByteArray &read, const QByteArray &session)
+ {
+-	const int sessionSize = session.size();
+-	if (read.mid(0, 1) != QByteArray(1, type))
+-		return QByteArray();
+-	if (read.mid(1, sessionSize) != session)
+-		return QByteArray();
+-	if (read.mid(1 + sessionSize, 1) != ";")
+-		return QByteArray();
+-
+-	return read.mid(1 + sessionSize + 1);
++  const int sessionSize = session.size();
++  if (read.mid(0, 1) != QByteArray(1, type))
++    return QByteArray();
++  if (read.mid(1, sessionSize) != session)
++    return QByteArray();
++  if (read.mid(1 + sessionSize, 1) != ";")
++    return QByteArray();
++
++  return read.mid(1 + sessionSize + 1);
+ }
+ 
+ QByteArray IsegHalRemote::writeRead(char command, const QByteArray &value) const
+ {
+-	QByteArray write = command + m_session;
+-	if (!value.isEmpty())
+-		write += ';' + value;
+-	const QByteArray read = writeReadSynchronous(write);
+-	const QByteArray data = readResult(command, read, m_session);
+ 
+-	return data;
++  QByteArray write = command + m_session;
++  if (!value.isEmpty())
++    write += ';' + value;
++  const QByteArray read = writeReadSynchronous(write);
++  const QByteArray data = readResult(command, read, m_session);
++
++  return data;
+ }
+ 
+ int IsegHalRemote::timeout()
+ {
+-	return m_timeout;
++  return m_timeout;
+ }
+ 
+ void IsegHalRemote::setTimeout(int milliSeconds)
+ {
+-	m_timeout = milliSeconds;
++  m_timeout = milliSeconds;
+ }
+ 
+ bool IsegHalRemote::supportsSsl()
+ {
+-	return QSslSocket::supportsSsl();
++  return QSslSocket::supportsSsl();
+ }
++
+ IsegResult IsegHalRemote::isegConnect(const QString &session, const QString &interface)
+ {
+-	m_session = session.toLatin1();
+ 
+-	if (!supportsSsl())
+-		return ISEG_NO_SSL_SUPPORT;
++  m_session = session.toLatin1();
++
++  if (!supportsSsl())
++    return ISEG_NO_SSL_SUPPORT;
+ 
+-	QRegExp reUrl;
+-	reUrl.setPattern(QLatin1String("^hal://(.*)/(.*)$"));
+-	reUrl.setMinimal(true);
+-	if (!reUrl.exactMatch(interface))
+-		return ISEG_ERROR;
++  QRegExp reUrl;
++  reUrl.setPattern(QLatin1String("^hal://(.*)/(.*)$"));
++  reUrl.setMinimal(true);
++  if (!reUrl.exactMatch(interface))
++    return ISEG_ERROR;
+ 
+-	QRegExp rePort;
+-	rePort.setPattern(QLatin1String("(.*):(\\d{1,5})$"));
+-	rePort.setMinimal(true);
++  QRegExp rePort;
++  rePort.setPattern(QLatin1String("(.*):(\\d{1,5})$"));
++  rePort.setMinimal(true);
+ 
+-	quint16 port = ISEG_REMOTE_PORT;
+-	QString url = reUrl.cap(1);
+-	if (url.contains(rePort)) {
+-		bool ok;
+-		url = rePort.cap(1);
+-		port = rePort.cap(2).toUShort(&ok);
++  quint16 port = ISEG_REMOTE_PORT;
++  QString url = reUrl.cap(1);
++  if (url.contains(rePort)) {
++    bool ok;
++    url = rePort.cap(1);
++    port = rePort.cap(2).toUShort(&ok);
+ 
+-		if (!ok)
+-			return ISEG_ERROR;
+-	}
++    if (!ok)
++      return ISEG_ERROR;
++  }
+ 
+-	if (!connectToHostEncrypted(url, port))
+-		return ISEG_ERROR;
++  if (!connectToHostEncrypted(url, port))
++    return ISEG_ERROR;
+ 
+-	const QByteArray data = writeRead(ISEG_REMOTE_CONNECT, interface.toLatin1());
+-	if (data.isEmpty())
+-		return ISEG_ERROR;
++  const QByteArray data = writeRead(ISEG_REMOTE_CONNECT, interface.toLatin1());
++  if (data.isEmpty())
++    return ISEG_ERROR;
+ 
+-	return static_cast<IsegResult>(data.toInt());
++  return static_cast<IsegResult>(data.toInt());
+ }
+ 
+ IsegResult IsegHalRemote::isegDisconnect()
+ {
+-	const QByteArray data = writeRead(ISEG_REMOTE_DISCONNECT);
++  const QByteArray data = writeRead(ISEG_REMOTE_DISCONNECT);
+ 
+-	m_socket->disconnectFromHost();
+-	if (!m_socket->waitForDisconnected(timeout()))
+-		return ISEG_ERROR;
++  m_socket->disconnectFromHost();
++  if (!m_socket->waitForDisconnected(10000))
++    return ISEG_ERROR;
+ 
+-	if (data.isEmpty())
+-		return ISEG_ERROR;
++  if (data.isEmpty())
++    return ISEG_ERROR;
+ 
+-	return static_cast<IsegResult>(data.toInt());
++  return static_cast<IsegResult>(data.toInt());
+ }
+ 
+ IsegItem IsegHalRemote::isegGetItem(const QByteArray &item)
+ {
+-	const QByteArray data = writeRead(ISEG_REMOTE_GETITEM, item);
+-	if (data.isEmpty())
+-		return IsegHalRemote::isegErrorItem();
+ 
+-	IsegItem result;
+-	memcpy(&result, data.constData(), sizeof(IsegItem));
+-	return result;
++  const QByteArray data = writeRead(ISEG_REMOTE_GETITEM, item);
++  if (data.isEmpty())
++    return IsegHalRemote::isegErrorItem();
++
++  IsegItem result;
++  memcpy(&result, data.constData(), sizeof(IsegItem));
++  return result;
+ }
+ 
+ IsegResult IsegHalRemote::isegSetItem(const QByteArray &item, const QByteArray &value)
+ {
+-	const QByteArray data = writeRead(ISEG_REMOTE_SETITEM, item + "," + value);
+-	if (data.isEmpty())
+-		return ISEG_ERROR;
+ 
+-	return static_cast<IsegResult>(data.toInt());
++  const QByteArray data = writeRead(ISEG_REMOTE_SETITEM, item + "," + value);
++  if (data.isEmpty())
++    return ISEG_ERROR;
++
++  return static_cast<IsegResult>(data.toInt());
+ }
+ 
+ IsegItemProperty IsegHalRemote::isegGetItemProperty(const QByteArray &item)
+ {
+-	const QByteArray data = writeRead(ISEG_REMOTE_GETPROPERTY, item);
+-	if (data.isEmpty())
+-		return isegErrorProperty();
+ 
+-	IsegItemProperty result;
+-	memcpy(&result, data.constData(), sizeof(IsegItemProperty));
+-	return result;
++  const QByteArray data = writeRead(ISEG_REMOTE_GETPROPERTY, item);
++  if (data.isEmpty())
++    return isegErrorProperty();
++
++  IsegItemProperty result;
++  memcpy(&result, data.constData(), sizeof(IsegItemProperty));
++  return result;
+ }
+ 
+ quint32 IsegHalRemote::isegGetServerVersion()
+ {
+-	const QByteArrayList version = isegGetServerVersionString().split('.');
+-	if (version.size() != 4)
+-		return 0;
++  const QByteArrayList version = isegGetServerVersionString().split('.');
++  if (version.size() != 4)
++    return 0;
+ 
+-	return (version[0].toInt() << 24) + (version[1].toInt() << 16) +
+-			(version[2].toInt() << 8) + version[3].toInt();
++  return (version[0].toInt() << 24) + (version[1].toInt() << 16) +
++      (version[2].toInt() << 8) + version[3].toInt();
+ }
+ 
+ QByteArray IsegHalRemote::isegGetServerVersionString()
+ {
+-	const QByteArray data = writeRead(ISEG_REMOTE_GETVERSION);
++  const QByteArray data = writeRead(ISEG_REMOTE_GETVERSION);
+ 
+-	return data;
++  return data;
+ }
+ 
+ IsegItem IsegHalRemote::isegErrorItem()
+ {
+-	IsegItem errorItem = EmptyIsegItem;
+-	qstrncpy(errorItem.quality, ISEG_ITEM_QUALITY_ERROR, QUALITY_SIZE);
+-	return errorItem;
++  IsegItem errorItem = EmptyIsegItem;
++  qstrncpy(errorItem.quality, ISEG_ITEM_QUALITY_ERROR, QUALITY_SIZE);
++  return errorItem;
+ }
+ 
+ IsegItemProperty IsegHalRemote::isegErrorProperty()
+ {
+-	IsegItemProperty errorProperty = EmptyIsegItemProperty;
+-	qstrncpy(errorProperty.quality, ISEG_ITEM_QUALITY_ERROR, QUALITY_SIZE);
+-	return errorProperty;
++  IsegItemProperty errorProperty = EmptyIsegItemProperty;
++  qstrncpy(errorProperty.quality, ISEG_ITEM_QUALITY_ERROR, QUALITY_SIZE);
++  return errorProperty;
+ }
+ 
+ QByteArray IsegHalRemote::isegResult(IsegResult value)
+ {
+-	QByteArray result = QByteArray::number(value);
+-
+-	switch (value) {
+-	case ISEG_OK:
+-		result.append(" (ISEG_OK)");
+-		break;
+-	case ISEG_ERROR:
+-		result.append(" (ISEG_ERROR)");
+-		break;
+-	case ISEG_WRONG_SESSION_NAME:
+-		result.append(" (ISEG_WRONG_SESSION_NAME)");
+-		break;
+-	case ISEG_WRONG_USER:
+-		result.append(" (ISEG_WRONG_USER)");
+-		break;
+-	case ISEG_WRONG_PASSWORD:
+-		result.append(" (ISEG_WRONG_PASSWORD)");
+-		break;
+-	case ISEG_NOT_AUTHORIZED:
+-		result.append(" (ISEG_NOT_AUTHORIZED)");
+-		break;
+-	case ISEG_NO_SSL_SUPPORT:
+-		result.append(" (ISEG_NO_SSL_SUPPORT)");
+-		break;
+-	default:
+-		result.append(" (UNKNOWN)");
+-		break;
+-	}
+-
+-	return result;
++  QByteArray result = QByteArray::number(value);
++
++  switch (value) {
++  case ISEG_OK:
++    result.append(" (ISEG_OK)");
++    break;
++  case ISEG_ERROR:
++    result.append(" (ISEG_ERROR)");
++    break;
++  case ISEG_WRONG_SESSION_NAME:
++    result.append(" (ISEG_WRONG_SESSION_NAME)");
++    break;
++  case ISEG_WRONG_USER:
++    result.append(" (ISEG_WRONG_USER)");
++    break;
++  case ISEG_WRONG_PASSWORD:
++    result.append(" (ISEG_WRONG_PASSWORD)");
++    break;
++  case ISEG_NOT_AUTHORIZED:
++    result.append(" (ISEG_NOT_AUTHORIZED)");
++    break;
++  case ISEG_NO_SSL_SUPPORT:
++    result.append(" (ISEG_NO_SSL_SUPPORT)");
++    break;
++  default:
++    result.append(" (UNKNOWN)");
++    break;
++  }
++
++  return result;
+ }
+diff --git a/isegHalRemoteClient/iseghalremote.h b/isegHalRemoteClient/iseghalremote.h
+index 60f6180..cdffc84 100644
+--- a/isegHalRemoteClient/iseghalremote.h
++++ b/isegHalRemoteClient/iseghalremote.h
+@@ -28,43 +28,55 @@
+ 
+ #include "isegapi.h"
+ #include "iseghalremoteclientglobal.h"
+-
++#include <QAbstractSocket>
+ #include <QObject>
+ 
+ class QSslSocket;
+ 
+ class ISEGHALREMOTECLIENT_EXPORT IsegHalRemote : public QObject
+ {
+-	Q_OBJECT
++  Q_OBJECT
+ 
+ public:
+-	enum { DefaultNetworkTimeout = 5000 };
++  enum { DefaultNetworkTimeout = 5000 };
++
++  IsegHalRemote(QObject *parent = 0);
+ 
+-	IsegHalRemote(QObject *parent = 0);
++  IsegResult isegConnect(const QString &session, const QString &interface);
++  IsegResult isegDisconnect();
++  IsegItem isegGetItem(const QByteArray &item);
++  IsegResult isegSetItem(const QByteArray &item, const QByteArray &value);
++  IsegItemProperty isegGetItemProperty(const QByteArray &item);
++  quint32 isegGetServerVersion();
++  QByteArray isegGetServerVersionString();
+ 
+-	IsegResult isegConnect(const QString &session, const QString &interface);
+-	IsegResult isegDisconnect();
+-	IsegItem isegGetItem(const QByteArray &item);
+-	IsegResult isegSetItem(const QByteArray &item, const QByteArray &value);
+-	IsegItemProperty isegGetItemProperty(const QByteArray &item);
+-	quint32 isegGetServerVersion();
+-	QByteArray isegGetServerVersionString();
++  static IsegItem isegErrorItem();
++  static IsegItemProperty isegErrorProperty();
++  static QByteArray isegResult(IsegResult value);
++  static int timeout();
++  static void setTimeout(int milliSeconds);
++  static bool supportsSsl();
++  bool isConnected();
++  bool isConnError();
+ 
+-	static IsegItem isegErrorItem();
+-	static IsegItemProperty isegErrorProperty();
+-	static QByteArray isegResult(IsegResult value);
+-	static int timeout();
+-	static void setTimeout(int milliSeconds);
+-	static bool supportsSsl();
++public slots:
++  void onConnected();
++  void onDisconnected();
++  void onErr(QAbstractSocket::SocketError error);
++  void onStateChanged(QAbstractSocket::SocketState socketState);
+ 
+ private:
+-	bool connectToHostEncrypted(const QString &host, quint16 port);
+-	QByteArray writeReadSynchronous(const QByteArray &data) const;
+-	QByteArray writeRead(char command, const QByteArray &value = QByteArray()) const;
++  bool connectToHostEncrypted(const QString &host, quint16 port);
++  QByteArray writeReadSynchronous(const QByteArray &data) const;
++  QByteArray writeRead(char command, const QByteArray &value = QByteArray()) const;
+ 
+-	static int m_timeout;
+-	QByteArray m_session;
+-	QSslSocket *m_socket;
++  static int m_timeout;
++  QByteArray m_session;
++  QSslSocket *m_socket;
++  bool connected;
++  bool conError;
+ };
+ 
++
++
+ #endif // ISEGHALREMOTE_H
+diff --git a/isegHalRemoteClient/isegremoteapi.cpp b/isegHalRemoteClient/isegremoteapi.cpp
+index 64f6458..a1e0167 100644
+--- a/isegHalRemoteClient/isegremoteapi.cpp
++++ b/isegHalRemoteClient/isegremoteapi.cpp
+@@ -30,9 +30,13 @@
+ #include <QHash>
+ #include <QMutex>
+ #include <QObject>
+-
++#include <QThread>
++#include <iostream>
+ #include <stdlib.h>
+-
++#include <thread>
++#include <iostream>
++#include <QDebug>
++#include <QSslSocket>
+ typedef QHash<QByteArray, IsegHalRemote *> IsegHalRemoteList;
+ typedef QHash<QByteArray, int> IsegHalRemoteTimeoutList;
+ static IsegHalRemoteList m_halRemoteList;
+@@ -41,123 +45,162 @@ static QMutex m_mutex;
+ 
+ static bool isKeyValid(const char *name)
+ {
+-	if (!m_halRemoteList.contains(name))
+-		return false;
++  if (!m_halRemoteList.contains(name))
++    return false;
+ 
+-	return true;
++  return true;
+ }
+ 
+ unsigned int iseg_getVersion(void)
+ {
+-	const unsigned int version[] = { VER_FILEVERSION };
++  const unsigned int version[] = { VER_FILEVERSION };
+ 
+-	return (version[0] << 24) + (version[1] << 16) + (version[2] << 8);
++  return (version[0] << 24) + (version[1] << 16) + (version[2] << 8);
+ }
+ 
+ const char *iseg_getVersionString(void)
+ {
+-	return VER_FILEVERSION_STR;
++  return VER_FILEVERSION_STR;
+ }
+ 
+ IsegResult iseg_connect(const char *name, const char *interface, void *reserved)
+ {
+-	Q_UNUSED(reserved);
+ 
+-	if (isKeyValid(name))
+-		return ISEG_WRONG_SESSION_NAME;
++ qCritical() << "System SSL Support "
++            << QSslSocket::supportsSsl()
++            << QSslSocket::sslLibraryBuildVersionString()
++            << QSslSocket::sslLibraryVersionString() ;
++
++  Q_UNUSED(reserved);
++
++  if (isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
++
++  IsegHalRemote *hal = new IsegHalRemote();
++  std::cout <<"HAL socket instance created "
++            << reinterpret_cast<void *>(hal)
++            << " from thread id: "
++            << std::this_thread::get_id()
++            << std::endl;
++
++  if (m_halTimeout.contains(name))
++    hal->setTimeout(m_halTimeout[name]);
++
++  const IsegResult result = hal->isegConnect(name, interface);
++
++  if (result == ISEG_OK) {
++    m_halRemoteList.insert(name, hal);
++  } else {
++    delete hal;
++  }
++
++  return result;
++}
+ 
+-	IsegHalRemote *hal = new IsegHalRemote();
++IsegResult iseg_reconnect(const char *name, const char *interface)
++{
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
+ 
+-	if (m_halTimeout.contains(name))
+-		hal->setTimeout(m_halTimeout[name]);
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  std::cout <<"("<<__FUNCTION__ <<") "
++            <<"\033[0;32mReconnecting via: HAL socket instance: "
++            <<reinterpret_cast<void *>(hal)
++            <<"\033[0m"<< std::endl;
++  const IsegResult result = hal->isegConnect(name, interface);
+ 
+-	const IsegResult result = hal->isegConnect(name, interface);
++  return result;
++}
+ 
+-	if (result == ISEG_OK) {
+-		m_halRemoteList.insert(name, hal);
+-	} else {
+-		delete hal;
+-	}
+ 
+-	return result;
++int iseg_isConnError(const char *name)
++{
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
++
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  return  hal->isConnError();
+ }
+ 
++
+ IsegResult iseg_disconnect(const char *name)
+ {
+-	if (!isKeyValid(name))
+-		return ISEG_WRONG_SESSION_NAME;
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
+ 
+-	IsegHalRemote *hal = m_halRemoteList.value(name);
+-	const IsegResult result = hal->isegDisconnect();
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  const IsegResult result = hal->isegDisconnect();
+ 
+-	delete hal;
+-	m_halRemoteList.remove(name);
++  delete hal;
++  m_halRemoteList.remove(name);
+ 
+-	return result;
++  return result;
+ }
+ 
+ IsegResult iseg_setItem(const char *name, const char *object, const char *value)
+ {
+-	if (Utils::isNetworkTimeout(object)) {
+-		m_halTimeout[name] = int(1000.0 * atof(value));
+-		return ISEG_OK;
+-	}
++  if (Utils::isNetworkTimeout(object)) {
++    m_halTimeout[name] = int(1000.0 * atof(value));
++    return ISEG_OK;
++  }
+ 
+-	if (!isKeyValid(name))
+-		return ISEG_WRONG_SESSION_NAME;
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
+ 
+-	IsegHalRemote *hal = m_halRemoteList.value(name);
+-	return hal->isegSetItem(object, value);
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  return hal->isegSetItem(object, value);
+ }
+ 
+ static IsegItem iseg_getInternalItem(IsegHalRemote *hal, const char *name, const char *object)
+ {
+-	IsegItem result = EmptyIsegItem;
+ 
+-	if (Utils::isNetworkTimeout(object)) {
+-		if (hal)
+-			return Utils::networkTimeout(hal->timeout());
++  IsegItem result = EmptyIsegItem;
++
++  if (Utils::isNetworkTimeout(object)) {
++    if (hal)
++      return Utils::networkTimeout(hal->timeout());
+ 
+-		if (m_halTimeout.contains(name))
+-			return Utils::networkTimeout(m_halTimeout.value(name));
++    if (m_halTimeout.contains(name))
++      return Utils::networkTimeout(m_halTimeout.value(name));
+ 
+-		return Utils::networkTimeout(IsegHalRemote::DefaultNetworkTimeout);
+-	}
++    return Utils::networkTimeout(IsegHalRemote::DefaultNetworkTimeout);
++  }
+ 
+-	if (Utils::isSessionName(object)) {
+-		if (hal)
+-			return Utils::sessionName(name);
++  if (Utils::isSessionName(object)) {
++    if (hal)
++      return Utils::sessionName(name);
+ 
+-		return Utils::createSessionName(name);
+-	}
++    return Utils::createSessionName(name);
++  }
+ 
+-	if (Utils::isServerVersion(object)) {
+-		const QByteArray ts = Utils::createTimeStamp();
+-		qstrncpy(result.object, object, sizeof(result.object));
+-		qstrncpy(result.value, hal->isegGetServerVersionString().constData(), sizeof(result.value));
+-		qstrncpy(result.quality, ISEG_ITEM_QUALITY_OK, sizeof(result.quality));
+-		qstrncpy(result.timeStampLastChanged, ts.constData(), sizeof(result.timeStampLastChanged));
+-		qstrncpy(result.timeStampLastRefreshed, ts.constData(), sizeof(result.timeStampLastRefreshed));
+-	}
++  if (Utils::isServerVersion(object)) {
++    const QByteArray ts = Utils::createTimeStamp();
++    qstrncpy(result.object, object, sizeof(result.object));
++    qstrncpy(result.value, hal->isegGetServerVersionString().constData(), sizeof(result.value));
++    qstrncpy(result.quality, ISEG_ITEM_QUALITY_OK, sizeof(result.quality));
++    qstrncpy(result.timeStampLastChanged, ts.constData(), sizeof(result.timeStampLastChanged));
++    qstrncpy(result.timeStampLastRefreshed, ts.constData(), sizeof(result.timeStampLastRefreshed));
++  }
+ 
+-	return result;
++  return result;
+ }
+ 
+ IsegItem iseg_getItem(const char *name, const char *object)
+ {
+-	if (!isKeyValid(name)) {
+-		if (Utils::isInternalItem(object))
+-			return iseg_getInternalItem(NULL, name, object);
+ 
+-		return IsegHalRemote::isegErrorItem();
+-	}
++  if (!isKeyValid(name)) {
++    if (Utils::isInternalItem(object))
++      return iseg_getInternalItem(NULL, name, object);
+ 
+-	IsegHalRemote *hal = m_halRemoteList.value(name);
++    return IsegHalRemote::isegErrorItem();
++  }
+ 
+-	if (Utils::isInternalItem(object))
+-		return iseg_getInternalItem(hal, name, object);
++  IsegHalRemote *hal = m_halRemoteList.value(name);
+ 
+-	return hal->isegGetItem(object);
++  if (Utils::isInternalItem(object))
++    return iseg_getInternalItem(hal, name, object);
++
++  return hal->isegGetItem(object);
+ }
+ 
+ /**
+@@ -180,25 +223,26 @@ IsegItem iseg_getItem(const char *name, const char *object)
+  */
+ IsegResult iseg_getItemString(const char *name, const char *object, char *result, int size)
+ {
+-	const IsegItem item = iseg_getItem(name, object);
++  const IsegItem item = iseg_getItem(name, object);
+ 
+-	qsnprintf(result, size_t(size), "%s;%s;%s;%s;%s", item.object, item.value,
+-			  item.quality, item.timeStampLastRefreshed, item.timeStampLastChanged);
++  qsnprintf(result, size_t(size), "%s;%s;%s;%s;%s", item.object, item.value,
++        item.quality, item.timeStampLastRefreshed, item.timeStampLastChanged);
+ 
+-	return ISEG_OK;
++  return ISEG_OK;
+ }
+ 
+ IsegItemProperty iseg_getItemProperty(const char *name, const char *object)
+ {
+-	if (!isKeyValid(name))
+-		return IsegHalRemote::isegErrorProperty();
+ 
+-	IsegHalRemote *hal = m_halRemoteList.value(name);
++  if (!isKeyValid(name))
++    return IsegHalRemote::isegErrorProperty();
++
++  IsegHalRemote *hal = m_halRemoteList.value(name);
+ 
+-	if (Utils::isInternalItem(object))
+-		return Utils::internalItemProperty(object);
++  if (Utils::isInternalItem(object))
++    return Utils::internalItemProperty(object);
+ 
+-	return hal->isegGetItemProperty(object);
++  return hal->isegGetItemProperty(object);
+ }
+ 
+ /**
+@@ -221,10 +265,10 @@ IsegItemProperty iseg_getItemProperty(const char *name, const char *object)
+  */
+ IsegResult iseg_getItemPropertyString(const char *name, const char *object, char *result, int size)
+ {
+-	const IsegItemProperty property = iseg_getItemProperty(name, object);
++  const IsegItemProperty property = iseg_getItemProperty(name, object);
+ 
+-	qsnprintf(result, size_t(size), "%s;%s;%s;%s;%s", property.object, property.type,
+-			  property.unit, property.access, property.quality);
++  qsnprintf(result, size_t(size), "%s;%s;%s;%s;%s", property.object, property.type,
++        property.unit, property.access, property.quality);
+ 
+-	return ISEG_OK;
++  return ISEG_OK;
+ }
+diff --git a/isegHalRemoteClient/isegremoteapi.h b/isegHalRemoteClient/isegremoteapi.h
+index 7f217ab..b003ba4 100644
+--- a/isegHalRemoteClient/isegremoteapi.h
++++ b/isegHalRemoteClient/isegremoteapi.h
+@@ -33,6 +33,8 @@
+ EXTERN_C_BEGIN
+ ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_getItemString(const char *name, const char *object, char *result, int size);
+ ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_getItemPropertyString(const char *name, const char *object, char *result, int size);
++ISEGHALREMOTECLIENT_EXPORT int iseg_isConnError( const char *name );
++ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_reconnect( const char *name, const char *interface );
+ EXTERN_C_END
+ 
+ #endif // ISEGREMOTEAPI_H
