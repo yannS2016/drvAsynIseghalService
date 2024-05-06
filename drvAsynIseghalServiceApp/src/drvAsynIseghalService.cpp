@@ -48,7 +48,8 @@ typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 epicsMutexId      hookMutexId;
 static drvIsegHalPollerThread *drvIsegHalPollerThread_ = NULL;
 
-short initStatus = 0;
+// stop access of iseghal instance outside of portthread
+bool initStatus = 0;
 
 std::vector<std::string> validIsegHalItems
 {
@@ -181,52 +182,56 @@ std::vector<std::string> validIsegHalItems
 */
 int drvAsynIseghalService::devConnect( std::string const& name, std::string const& interface ) {
 
-  std::vector< std::string >::iterator it;
-  it = std::find( session_.begin(), session_.end(), name );
-  if( it != session_.end() ) return true;
+  if (devInitOk_) {
+    if( iseg_isConnError(name.c_str()) ) {
+    // We session was disconnected! attempt reconexion n times
+    // otherwise close the connexion and open a new one. we use autoconnect freq here.
+        asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Attempting reconnexion... to %s\n", name.c_str(), interface.c_str() );
 
-  IsegResult status = iseg_connect( name.c_str(), interface.c_str(), NULL );
-  if ( ISEG_OK != status ) {
-     return false;
+        IsegResult status = iseg_reconnect(name.c_str(), interface.c_str() );
+        if ( ISEG_OK != status ) return false;
+        conMan_ = 0;
+        drvIsegHalPollerThread_->changeIntervall(2.0);
+    }
   }
-  // new iseghal session to iseg device.
-  session_.push_back( name );
+  else {
+    asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Open connection to %s\n", name.c_str(), interface.c_str() );
+    IsegResult status = iseg_connect( name.c_str(), interface.c_str(), NULL );
+    if ( ISEG_OK != status ) return false;
+    // new iseghal session to iseg device.
+    openedSessions.push_back( name );
+    devInitOk_ = true;
+  }
+
   /* iseg HAL starts collecting data from hardware after connect.
-  * wait 5 secs to let all values 'initialize'
+    * wait 5 secs to let all values 'initialize'
   */
-  epicsThreadSleep( 2 );
+  epicsThreadSleep( 5 );
   return true;
 }
+
 
 /** Disconnect from iseg device session
   * \param [in]  name   drvAsynIseghalService internal name of the interface handle
 */
 int drvAsynIseghalService::devDisconnect( std::string const& name ) {
-  std::vector< std::string >::iterator it;
-  it = std::find( session_.begin(), session_.end(), name );
 
-  if( it != session_.end() ) {
-    epicsMutexLock(hookMutexId);
     int status = iseg_disconnect( name.c_str() );
-    epicsMutexUnlock(hookMutexId);
-    if ( ISEG_OK != status ) {
-      return false;
-    }
-    session_.erase( it );
-  }
-  return true;
+    if ( status != ISEG_OK  ) return false;
+    openedSessions.clear();
+    return true;
 }
+
 
 /** Check if a device is connected
   * name:   drvAsynIseghalService internal name of the interface handle
 */
 int drvAsynIseghalService::devConnected( std::string const& name ) {
-
   std::vector< std::string >::iterator it;
-  it = std::find( session_.begin(), session_.end(), name );
-  if( it != session_.end() ) return true;
-
-  return false;
+  it = std::find( openedSessions.begin(), openedSessions.end(), name );
+  // cant access hal object unless connect was successfully called
+  if(!devInitOk_) return false;
+  return ( it != openedSessions.end() && !iseg_isConnError(name.c_str()));
 }
 
 /** Called by epicsAtExit to shutdown iseghal session */
@@ -234,20 +239,18 @@ static void iseghalSessionShutdown( void* pDrv) {
   asynStatus status;
   drvAsynIseghalService *pPvt = (drvAsynIseghalService *) pDrv;
   pPvt->iseghalExiting_ = true;
-  status =  pasynCommonSyncIO->disconnectDevice(pPvt->self_);
+  status =  pasynCommonSyncIO->disconnectDevice(pPvt->exitUser_);
   if(status!=asynSuccess)
-        asynPrint(pPvt->self_, ASYN_TRACE_ERROR, "%s: drvAsynIseghalService cleanup  error %s\n", pPvt->portName, pPvt->self_->errorMessage);
-
+        asynPrint(pPvt->exitUser_, ASYN_TRACE_ERROR, "%s: drvAsynIseghalService cleanup  error %s\n", pPvt->portName, pPvt->exitUser_->errorMessage);
 }
 
 // all record have been initialized
-static void finishDevSup(initHookState state) {
+static void startPolling(initHookState state) {
     if (state == initHookAfterIocRunning) {
       initStatus = 1;
       // all record init done: interrupt list filled
       if(drvIsegHalPollerThread_ != NULL) {
         drvIsegHalPollerThread_->thread.start();
-        std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " <<  initHookName(state) <<"\033[0m" << std::endl;
       }
     }
 }
@@ -263,37 +266,49 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
     1, // Autoconnect
     0, // Default priority
     0 ), // Default stack size
-    iseghalExiting_(false)
+    iseghalExiting_(false),
+    conMan_(false),
+    iseghalReconAttempt_(10)
 
 {
     static const char *functionName = "drvAsynIseghalService";
 
-    deviceSession_  = epicsStrDup( portName );
+    session_  		= epicsStrDup( portName );
     interface_    = epicsStrDup( interface );
-    deviceModel_  = epicsStrDup( icsCtrtype );
-    self_ = pasynManager->createAsynUser(0, 0);
+    deviceModel_	= epicsStrDup( icsCtrtype );
+		itemReason_ 	= 0;
+    devInitOk_ 		= 0;
+    exitUser_ 		= pasynManager->createAsynUser(0, 0);
+
     asynStatus status;
 
-    /* Connect this user to the port */
-    status = pasynCommonSyncIO->connect(deviceSession_, 0, &self_, NULL);
+    /* Connect this user to the port so we can use it to cleanup connexion at exit*/
+    status = pasynCommonSyncIO->connect(session_, 0, &exitUser_, NULL);
     if (status) {
       printf("%s:%s: pasynCommonSyncIO->connect failure, status=%d\n", driverName, functionName, status);
       return;
     }
 
-    //pasynManager->setAutoConnectTimeout(2.0)
+		/* iseg HAL starts collecting data from hardware after connect.
+			* allow 5 secs timeout to let all values 'initialize'
+		*/
+    pasynManager->setAutoConnectTimeout(5.0);
+
+		hookMutexId = epicsMutexCreate();
     /* Register the shutdown function for epicsAtExit */
     epicsAtExit(iseghalSessionShutdown, (void*)this);
 
-    hookMutexId = epicsMutexCreate();
-    initHookRegister(finishDevSup);
-    itemIndex = 0;
+		/* Register the start polling fucntion: we wait till ioc is in running state before starting */
+    initHookRegister(startPolling);
 
+		// instantiate the polling thread, but dont start yet.
     drvIsegHalPollerThread_ = new drvIsegHalPollerThread(this);
     if(!drvIsegHalPollerThread_) return;
 
+}
 
-
+char *drvAsynIseghalService::getSessionName (){
+  return session_;
 }
 
 asynStandardInterfaces drvAsynIseghalService::getAsynStdIface()
@@ -303,61 +318,84 @@ asynStandardInterfaces drvAsynIseghalService::getAsynStdIface()
 
 asynStatus drvAsynIseghalService::getIsegHalItem (asynUser *isegHalUser, IsegItem *item)
 {
-	static const char *functionName = "readFloat64";
+  static const char *functionName = "getIsegHalItem";
   const char *propertyName;
 
   asynStatus status = asynSuccess;
 
   epicsInt16 function = isegHalUser->reason;
 
-  printf("\033[0;33m%s : %s\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__);
+  printf("\033[0;33m%s : (%s)\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__);
+
+  if(!initStatus) return asynError;
+
+  if (iseghalExiting_) return asynSuccess;
 
   getParamName(function, &propertyName);
 
   if (propertyName == NULL) {
     epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
-    status = asynError;
-  }
-
-  // Test if interface is connected to isegHAL server
-  if( !devConnected( deviceSession_ ) ) {
+      session_, functionName, propertyName);
     return asynError;
   }
 
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+  // Test if interface is connected to isegHAL server
+  if( !devConnected( session_ ) ) {
+    if(devInitOk_ && !conMan_) {
+      this->disconnect(isegHalUser);
+      drvIsegHalPollerThread_->changeIntervall(10.0);
+    }
+    return asynError;
+  }
 
-  if(strcmp( itemProperty.access, "R" ) != 0) {
+  IsegItemProperty itemProperty = iseg_getItemProperty( session_, propertyName );
+	//printf("\033[0;33m%s : %s : propertyName %s: Permission %s\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, propertyName, itemProperty.access);
+  if(!(strcmp( itemProperty.access, "R" ) == 0 || strcmp( itemProperty.access, "RW" ) == 0) ) {
 
     epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong item '%s' permission: Access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
+      session_, functionName, propertyName, itemProperty.access );
 
     isegHalUser->alarmStatus = 1;
     isegHalUser->alarmSeverity = 3;
-    status = asynError;
+    return asynError;
   }
 
-  *item = iseg_getItem(deviceSession_, propertyName);
+  *item = iseg_getItem(session_, propertyName);
 
   if( strcmp( item->quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-    epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
+    epicsSnprintf( isegHalUser->errorMessage,isegHalUser->errorMessageSize,"\033[31;1m%s:%s Error reading from device (Q: %s): %s\033[0m",
+									session_, functionName, item->quality, strerror( errno ) );
 
     isegHalUser->alarmStatus = 1;
     isegHalUser->alarmSeverity = 3;
 
-    status = asynError;
+    return asynError;
   }
 
-	return status;
+  epicsUInt32 seconds = 0;
+  epicsUInt32 microsecs = 0;
+  epicsTimeStamp time;
+
+  if( sscanf( item->timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
+    epicsSnprintf( isegHalUser->errorMessage, isegHalUser->errorMessageSize,
+      "%s:%s: Error while reading from %s : %s",
+      session_, functionName, propertyName, strerror( errno ) );
+
+    isegHalUser->alarmStatus = 1;
+    isegHalUser->alarmSeverity = 3;
+    return asynError;
+  }
+
+  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
+  time.nsec = microsecs * 100000;
+  isegHalUser->timestamp = time;
+
+  return status;
 }
 
-char *drvAsynIseghalService::getSessionName (){
-  return deviceSession_;
-}
+
 
 asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value )
 {
@@ -366,19 +404,18 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 
   int function = pasynUser->reason;
   const char *propertyName;
-  epicsTimeStamp timeStamp; getTimeStamp(&timeStamp);
-
+  epicsTimeStamp timeStamp;
   asynStatus status = asynSuccess;
-
-
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
   char sVal[20];
 
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
   if (iseghalExiting_) return asynSuccess;
   // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-      return asynError;
+  if( !devConnected( session_ ) ) {
+    if(devInitOk_ && !conMan_) {
+      this->disconnect(pasynUser);
+    }
+    return asynError;
   }
 
   getParamName(function, &propertyName);
@@ -386,17 +423,17 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
   if (propertyName == NULL) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
+      session_, functionName, propertyName);
       return asynError;
   }
 
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+  IsegItemProperty itemProperty = iseg_getItemProperty( session_, propertyName );
 
   if(strcmp( itemProperty.access, "RW" ) != 0) {
 
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
+      session_, functionName, propertyName, itemProperty.access );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
@@ -406,10 +443,10 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 
   epicsSnprintf( sVal, WRITE_LEN, "%f", value);
 
-  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+  if(iseg_setItem(session_, propertyName,  sVal) != ISEG_OK ) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while writing value '%f' for %s : %s",
-      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+      "%s:%s: Error writing value '%f' for %s : %s",
+      session_, functionName, value, propertyName, strerror( errno ) );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
@@ -417,27 +454,24 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
     return asynError;
   }
 
-  // update value of parameter
-  status = (asynStatus) setIntegerParam(function, value);
-
-  status = (asynStatus) callParamCallbacks();
-
-  if( status ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-                   "%s:%s: status=%d, function=%d, value=%f",
-                   deviceSession_, functionName, status, function, value );
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
-
-  }
-
-  else {
-    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE, "%s:%s: function=%d, value=%f\n",
-              deviceSession_, functionName, function, value );
-  }
+  pasynUser->alarmStatus = 0;
+  pasynUser->alarmSeverity = 0;
 
   getTimeStamp(&timeStamp);
   pasynUser->timestamp = timeStamp;
+
+  // update value of parameter
+  status = (asynStatus) setDoubleParam(function, value);
+	status = (asynStatus) callParamCallbacks();
+  if( status )
+    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
+                   "%s:%s: status=%d, function=%d, value=%f",
+                   session_, functionName, status, function, value );
+  else
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
+               "%s:%s: function=%d, value=%f\n",
+              session_, functionName, function, value );
+
 
   return status;
 }
@@ -458,93 +492,33 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 
   epicsInt16 function = pasynUser->reason;
   epicsFloat64 dVal = 0;
-  epicsInt16 afterInit = 0;
 
-  const char *propertyName;
   IsegItem item = EmptyIsegItem;
   asynStatus status = asynSuccess;
 
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
-  afterInit = initStatus;
-
-  if(afterInit != 1) return asynError;
-
-  if (iseghalExiting_) return asynSuccess;
-
-  // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-    return asynError;
-  }
-
-  getParamName(function, &propertyName);
-  if (propertyName == NULL) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
-    return asynError;
-  }
-
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
-
-  if(strcmp( itemProperty.access, "R" ) != 0) {
-
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s Wrong item '%s' permission: Access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  item = iseg_getItem(deviceSession_, propertyName);
-
-  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  epicsUInt32 seconds = 0;
-  epicsUInt32 microsecs = 0;
-
-  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
-    return asynError;
-  }
-
-  epicsTimeStamp time;
-  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
-  time.nsec = microsecs * 100000;
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
+	status = getIsegHalItem (pasynUser, &item);
+	if(status != asynSuccess) return asynError;
 
   // set new paramter value and update record val field
   dVal = (epicsFloat64)strtod (item.value, NULL);
   *value = dVal;
   setDoubleParam (function, dVal );
-  pasynUser->timestamp = time;
   status = (asynStatus) getDoubleParam(function, &dVal);
 
-/*  setDoubleParam (function,       dVal );
-  return asynPortDriver::readFloat64(pasynUser, value);*/
   if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%f",
-                   deviceSession_, functionName, status, function, *value );
+                   session_, functionName, status, function, *value );
   else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%f\n",
-              deviceSession_, functionName, function, *value );
+              session_, functionName, function, *value );
 
   pasynUser->alarmStatus = 0;
   pasynUser->alarmSeverity = 0;
 
-  return asynSuccess;
+  return status;
 }
 
 /**
@@ -564,92 +538,18 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
   static const char *functionName = "readUInt32Digital";
 
   epicsInt16 function = pasynUser->reason;
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
 
-  const char *propertyName;
   asynStatus status = asynSuccess;
-
   IsegItem item = EmptyIsegItem;
-
   epicsUInt32 iVal = 0;
-  epicsInt16 afterInit = 0;
 
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
-  epicsMutexLock(hookMutexId);
-  afterInit = initStatus;
-  epicsMutexUnlock(hookMutexId);
-
-  if(afterInit != 1) return asynError;
-
-  if (iseghalExiting_) return asynSuccess;
-
- // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-      return asynError;
-  }
-
-  getParamName(function, &propertyName);
-
-  if (propertyName == NULL) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
-      return asynError;
-  }
-  //std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "stage 3:" << "\033[0m" << std::endl;
-
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
-
-  if(strcmp( itemProperty.access, "RW" ) != 0) {
-
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-  //std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "stage 4:" << "\033[0m" << std::endl;
-
-
-
-  item = iseg_getItem(deviceSession_, propertyName);
-
-  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  epicsUInt32 seconds = 0;
-  epicsUInt32 microsecs = 0;
-
-  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-    return asynError;
-  }
-
-  epicsTimeStamp time;
-  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
-  time.nsec = microsecs * 100000;
-
+	status = getIsegHalItem (pasynUser, &item);
+	if(status != asynSuccess) return asynError;
 
   iVal = (epicsUInt32)atoi(item.value);
   *value = iVal;
   status = (asynStatus) setUIntDigitalParam(function, iVal, mask );
-  pasynUser->timestamp = time;
   pasynUser->alarmStatus = 0;
   pasynUser->alarmSeverity = 0;
   status = (asynStatus) getUIntDigitalParam(function, &iVal, mask );
@@ -657,22 +557,13 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
   if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%d",
-                   deviceSession_, functionName, status, function, *value );
+                   session_, functionName, status, function, *value );
   else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%d\n",
-              deviceSession_, functionName, function, *value );
+              session_, functionName, function, *value );
 
-  //callParamCallbacks();
-
-
-/*    iVal = 6;
-  *value = iVal;
-  status = (asynStatus) setUIntDigitalParam(function, iVal, mask );
-
-  status = (asynStatus) getUIntDigitalParam(function, &iVal, mask ); */
-
-  return asynSuccess;
+  return status;
 }
 
 /**
@@ -691,17 +582,23 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
   static const char *functionName = "writeUInt32Digital";
 
   epicsInt16 function = pasynUser->reason;
-
   const char *propertyName;
   epicsTimeStamp timeStamp;
-
   asynStatus status = asynSuccess;
+
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
 
   if (iseghalExiting_) return asynSuccess;
 
-  getTimeStamp(&timeStamp);
+  // Test if interface is connected to isegHAL server
+  if( !devConnected( session_ ) ) {
+    if(devInitOk_ && !conMan_) {
+      this->disconnect(pasynUser);
+    }
+    return asynError;
+  }
 
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
+  getTimeStamp(&timeStamp);
 
   char sVal[20];
 
@@ -710,33 +607,27 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
   if (it != isegHalItemsLookup.end() ) {
 
     if(it->second == "Status") {
-      std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf()
-                << " thread: " << "Write Item: " << it->second <<"\033[0m" << std::endl;
       return asynSuccess;
     }
   }
 
-  // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-      return asynError;
-  }
 
   getParamName(function, &propertyName);
 
   if (propertyName == NULL) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
+      session_, functionName, propertyName);
       return asynError;
   }
 
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+  IsegItemProperty itemProperty = iseg_getItemProperty( session_, propertyName );
 
   if(strcmp( itemProperty.access, "RW" ) != 0) {
 
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
+      session_, functionName, propertyName, itemProperty.access );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
@@ -746,41 +637,35 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
 
   epicsSnprintf( sVal, WRITE_LEN, "%d", (value & mask) );
 
-  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+  if(iseg_setItem(session_, propertyName,  sVal) != ISEG_OK ) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "%s:%s: Error while writing value '%d' for %s : %s",
-      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+      session_, functionName, value, propertyName, strerror( errno ) );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
 
     return asynError;
   }
+
+  pasynUser->alarmStatus = 0;
+  pasynUser->alarmSeverity = 0;
+
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
   // update value of parameter
   status = (asynStatus) setUIntDigitalParam(function, value, mask );
   /* Do callbacks so higher layers see any changes */
   status = (asynStatus) callParamCallbacks();
 
-  if( status ) {
+  if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%d",
-                   deviceSession_, functionName, status, function, value );
-    // Update alarms status.
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
-
-  }
-
-  else {
+                   session_, functionName, status, function, value );
+  else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%d\n",
-              deviceSession_, functionName, function, value );
-  }
-
-  /* Get the current timestamp */
-  getTimeStamp(&timeStamp);
-  pasynUser->timestamp = timeStamp;
-
+              session_, functionName, function, value );
   return status;
 }
 
@@ -790,103 +675,36 @@ asynStatus drvAsynIseghalService::readInt32(asynUser *pasynUser, epicsInt32 *val
   static const char *functionName = "readInt32";
 
   epicsInt16 function = pasynUser->reason;
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
+
   asynStatus status = asynSuccess;
-  const char *propertyName;
   IsegItem item = EmptyIsegItem;
   epicsInt32 iVal = 0;
 
-  epicsInt16 afterInit = 0;
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
-  epicsMutexLock(hookMutexId);
-  afterInit = initStatus;
-  epicsMutexUnlock(hookMutexId);
-
-  if(afterInit != 1) return asynError;
-
-  if (iseghalExiting_) return asynSuccess;
-
-  // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-    return asynError;
-  }
-
-  getParamName(function, &propertyName);
-
-  if (propertyName == NULL) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
-    return asynError;
-  }
-
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
-
-  if(strcmp( itemProperty.access, "RW" ) != 0) {
-
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s Wrong item '%s' permission: Access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  item = iseg_getItem(deviceSession_, propertyName);
-
-  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
-
-    // Update alarms status.
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  epicsUInt32 seconds = 0;
-  epicsUInt32 microsecs = 0;
-
-  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-    return asynError;
-  }
-
-  epicsTimeStamp time;
-  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
-  time.nsec = microsecs * 100000;
+	status = getIsegHalItem (pasynUser, &item);
+	if(status != asynSuccess) return asynError;
 
   // set new paramter value and update record val field
-    iVal = (epicsInt32)atoi(item.value);
+  iVal = (epicsInt32)atoi(item.value);
   *value = iVal;
-    setIntegerParam(function, iVal);
-  pasynUser->timestamp = time;
+  setIntegerParam(function, iVal);
   status = (asynStatus) getIntegerParam(function, &iVal);
-
 
   if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%d",
-                   deviceSession_, functionName, status, function, *value );
+                   session_, functionName, status, function, *value );
   else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%d\n",
-              deviceSession_, functionName, function, *value );
+              session_, functionName, function, *value );
 
   // Update alarms status.
   pasynUser->alarmStatus = 0;
   pasynUser->alarmSeverity = 0;
 
-  return asynSuccess;
+  return status;
 }
-
 asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 value) {
 
   static const char *functionName = "writeInt32";
@@ -894,19 +712,18 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
   int function = pasynUser->reason;
   const char *propertyName;
   epicsTimeStamp timeStamp; getTimeStamp(&timeStamp);
-
   asynStatus status = asynSuccess;
-
-
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
   char sVal[20];
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
 
   if (iseghalExiting_) return asynSuccess;
 
   // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-      return asynError;
+  if( !devConnected( session_ ) ) {
+    if(devInitOk_ && !conMan_) {
+      this->disconnect(pasynUser);
+    }
+    return asynError;
   }
 
   getParamName(function, &propertyName);
@@ -914,17 +731,17 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
   if (propertyName == NULL) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
+      session_, functionName, propertyName);
       return asynError;
   }
 
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+  IsegItemProperty itemProperty = iseg_getItemProperty( session_, propertyName );
 
   if(strcmp( itemProperty.access, "RW" ) != 0) {
 
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
+      session_, functionName, propertyName, itemProperty.access );
     // Update alarms status.
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
@@ -934,10 +751,10 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
 
   epicsSnprintf( sVal, WRITE_LEN, "%d", value );
 
-  if(iseg_setItem(deviceSession_, propertyName,  sVal) != ISEG_OK ) {
+  if(iseg_setItem(session_, propertyName,  sVal) != ISEG_OK ) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "%s:%s: Error while writing value '%d' for %s : %s",
-      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+      session_, functionName, value, propertyName, strerror( errno ) );
 
     // Update alarms status.
     pasynUser->alarmStatus = 2;
@@ -946,31 +763,25 @@ asynStatus drvAsynIseghalService::writeInt32(asynUser *pasynUser, epicsInt32 val
     return asynError;
   }
 
+  pasynUser->alarmStatus = 0;
+  pasynUser->alarmSeverity = 0;
+
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
   // update value of parameter
   status = (asynStatus) setIntegerParam(function, value);
 
   status = (asynStatus) callParamCallbacks();
 
-  if( status ) {
+  if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%d",
-                   deviceSession_, functionName, status, function, value );
-    // Update alarms status.
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
-
-  }
-
-  else {
+                   session_, functionName, status, function, value );
+  else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%d\n",
-              deviceSession_, functionName, function, value );
-  }
-
-  getTimeStamp(&timeStamp);
-  pasynUser->timestamp = timeStamp;
-
-  return asynSuccess;
+              session_, functionName, function, value );
+  return status;
 }
 asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason)
 {
@@ -978,87 +789,28 @@ asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, si
   static const char *functionName = "readOctet";
 
   epicsInt16 function = pasynUser->reason;
-  char octetValue[maxChars];
-  epicsInt16 afterInit = 0;
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
 
-  const char *propertyName;
+  char octetValue[maxChars];
   IsegItem item = EmptyIsegItem;
   asynStatus status = asynSuccess;
 
-  epicsMutexLock(hookMutexId);
-  afterInit = initStatus;
-  epicsMutexUnlock(hookMutexId);
-
-  if(afterInit != 1) return asynError;
-
-  if (iseghalExiting_) return asynSuccess;
-
-  // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-    return asynError;
-  }
-
-  getParamName(function, &propertyName);
-  if (propertyName == NULL) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
-    return asynError;
-  }
-
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
-
-  if(strcmp( itemProperty.access, "RW" ) != 0) {
-
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "\033[31;1m%s:%s Wrong item '%s' permission: Access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  item = iseg_getItem(deviceSession_, propertyName);
-
-  if( strcmp( item.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-      "%s:%s: Error while reading from %s : %s",
-      deviceSession_, functionName, propertyName, strerror( errno ) );
-
-    pasynUser->alarmStatus = 1;
-    pasynUser->alarmSeverity = 3;
-
-    return asynError;
-  }
-
-  epicsUInt32 seconds = 0;
-  epicsUInt32 microsecs = 0;
-
-  if( sscanf( item.timeStampLastChanged, "%u.%u", &seconds, &microsecs ) != 2 ) {
-    return asynError;
-  }
-
-  epicsTimeStamp time;
-  time.secPastEpoch = seconds - POSIX_TIME_AT_EPICS_EPOCH;
-  time.nsec = microsecs * 100000;
-
+	status = getIsegHalItem (pasynUser, &item);
+	if(status != asynSuccess) return asynError;
 
   strncpy(value, item.value, maxChars);
   *nActual = strlen(item.value);
   setStringParam( function, item.value);
-  pasynUser->timestamp = time;
   status = (asynStatus) getStringParam(function, maxChars, octetValue);
 
   if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%s",
-                   deviceSession_, functionName, status, function, value );
+                   session_, functionName, status, function, value );
   else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%s\n",
-              deviceSession_, functionName, function, value );
+              session_, functionName, function, value );
 
   pasynUser->alarmStatus = 0;
   pasynUser->alarmSeverity = 0;
@@ -1069,22 +821,20 @@ asynStatus drvAsynIseghalService::readOctet(asynUser *pasynUser, char *value, si
 }
 asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual)
 {
-
   static const char *functionName = "writeOctet";
 
   int function = pasynUser->reason;
   const char *propertyName;
-  epicsTimeStamp timeStamp; getTimeStamp(&timeStamp);
-
   asynStatus status = asynSuccess;
+  epicsTimeStamp timeStamp;
 
-
-  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "Reason: "<<function << "\033[0m" << std::endl;
-
-
+  printf("\033[0;33m%s : (%s) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, function);
   // Test if interface is connected to isegHAL server
-  if( !devConnected( this->deviceSession_ ) ) {
-      return asynError;
+  if( !devConnected( session_ ) ) {
+    if(devInitOk_ && !conMan_) {
+      this->disconnect(pasynUser);
+    }
+    return asynError;
   }
 
   getParamName(function, &propertyName);
@@ -1092,17 +842,17 @@ asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *va
   if (propertyName == NULL) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s:Invalid iseghal parameter '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName);
+      session_, functionName, propertyName);
       return asynError;
   }
 
-  IsegItemProperty itemProperty = iseg_getItemProperty( deviceSession_, propertyName );
+  IsegItemProperty itemProperty = iseg_getItemProperty( session_, propertyName );
 
   if(strcmp( itemProperty.access, "RW" ) != 0) {
 
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
-      deviceSession_, functionName, propertyName, itemProperty.access );
+      session_, functionName, propertyName, itemProperty.access );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
@@ -1111,40 +861,34 @@ asynStatus drvAsynIseghalService::writeOctet(asynUser *pasynUser, const char *va
   }
 
 
-  if(iseg_setItem(deviceSession_, propertyName,  value) != ISEG_OK ) {
+  if(iseg_setItem(session_, propertyName,  value) != ISEG_OK ) {
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
       "%s:%s: Error while writing value '%s' for %s : %s",
-      deviceSession_, functionName, value, propertyName, strerror( errno ) );
+      session_, functionName, value, propertyName, strerror( errno ) );
 
     pasynUser->alarmStatus = 2;
     pasynUser->alarmSeverity = 3;
 
     return asynError;
   }
+  getTimeStamp(&timeStamp);
+  pasynUser->timestamp = timeStamp;
 
+  pasynUser->alarmStatus = 0;
+  pasynUser->alarmSeverity = 0;
   // update value of parameter
   status = (asynStatus) setStringParam(function, value);
 
   status = (asynStatus) callParamCallbacks();
 
-  if( status ) {
+  if( status )
     epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
                    "%s:%s: status=%d, function=%d, value=%s",
-                   deviceSession_, functionName, status, function, value );
-
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
-
-  }
-
-  else {
+                   session_, functionName, status, function, value );
+  else
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%s\n",
-              deviceSession_, functionName, function, value );
-  }
-
-  getTimeStamp(&timeStamp);
-  pasynUser->timestamp = timeStamp;
+              session_, functionName, function, value );
 
   return status;
 }
@@ -1214,7 +958,7 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
     // Check we have this iseghal item
     if (!this->hasIsegHalItem(halItem)) {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
-                "\033[0;33m %s:%s: Parameter '%s' doesn't exist on iseghal item list\n\033[0m",
+                "\033[0;33m%s:%s: Parameter '%s' doesn't exist on iseghal item list\n\033[0m",
                 driverName, functionName, halItem);
           // Update alarms status.
       pasynUser->alarmStatus = 17;    // UDF
@@ -1280,36 +1024,37 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 
     int index;
     if (findParam(halItemFQN, &index) == asynParamNotFound) {
-      //Make parameter of the correct type
+      //Create parameter of the correct type
+
       if( strcmp(halItemType, "INT") == 0) {
-          createParam(halItemFQN, asynParamInt32, &itemIndex);
-          setIntegerParam (itemIndex,       0);
+          createParam(halItemFQN, asynParamInt32, &itemReason_);
+          setIntegerParam (itemReason_,       0);
 
       } else if (strcmp(halItemType, "DBL") == 0) {
-          createParam(halItemFQN, asynParamFloat64, &itemIndex);
-          setDoubleParam (itemIndex,       0.0);
+          createParam(halItemFQN, asynParamFloat64, &itemReason_);
+          setDoubleParam (itemReason_,       0.0);
 
       } else if (strcmp(halItemType, "STR") == 0) {
-          createParam(halItemFQN, asynParamOctet, &itemIndex);
-          setStringParam(itemIndex,         "0.0");
+          createParam(halItemFQN, asynParamOctet, &itemReason_);
+          setStringParam(itemReason_,         "0.0");
 
       } else if (strcmp(halItemType, "DIG") == 0) {
-          createParam(halItemFQN, asynParamUInt32Digital, &itemIndex);
-
+          createParam(halItemFQN, asynParamUInt32Digital, &itemReason_);
+					setUIntDigitalParam(itemReason_, 0, 0xf );
       } else {
           asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR,
                       "%s:%s: Expected Type is INT|DBL|STR|DIG. Got '%s'\n", driverName, functionName, halItemType);
           return asynError;
       }
 
-      pasynUser->reason = itemIndex;
-      isegHalItemsLookup.insert( std::make_pair( itemIndex, std::string(tmp) ) );
+      pasynUser->reason = itemReason_;
+      isegHalItemsLookup.insert( std::make_pair( itemReason_, std::string(tmp) ) );
 
-      std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread: " << "FQN: " << halItemFQN << " index: " << itemIndex <<"\033[0m" << std::endl;
-      itemIndex++;
+      printf("\033[0;33m%s : (%s) : FQN : '%s' : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, halItemFQN, itemReason_);
+      itemReason_++;
     } else {
-			pasynUser->reason = index;
-		}
+      pasynUser->reason = index;
+    }
   }
 
   return asynSuccess;
@@ -1323,53 +1068,45 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIseghalService::connect(asynUser *pasynUser) {
- std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread "<<"\033[0m" << std::endl;
 
-  if( devConnected( deviceSession_ ) )  {
+  printf("\033[0;33m%s : (%s)\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__);
+  if( !devConnect(session_, interface_) ) {
     epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Link to %s already open!", deviceSession_, interface_ );
+                   "%s: Can't open %s: %s", session_, interface_, strerror( errno ) );
     return asynError;
   }
 
-  asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
-             "%s: Open connection to %s\n", deviceSession_, interface_ );
-
-  if( !devConnect(deviceSession_, interface_) ) {
-    epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: Can't open %s: %s", deviceSession_, interface_, strerror( errno ) );
-    return asynError;
-  }
-
-/* check devices is responsive.
-  * modelBA: iseg iCS based HV system controller model: cc24 for crate type
-  * icsmini based system will expose the first crate controller module model i.e MICC.
+/* check if devices is responsive.
+  * iCSModel: iseg iCS based HV system controller model
+  * cc24: for crate systems
+	* icsmini: system exposes the first crate controller module model i.e MICC.
 */
 
-  char modelBA[15];
+  char iCSModel[FQN_LEN];
   // icsmini default
-  strcpy(modelBA, "0.0.Article");
+  strcpy(iCSModel, "0.0.Article");
 
   if( strcmp( deviceModel_, "cc24" ) == 0 ) {
-    strcpy(modelBA, "0.100.Article");
+    strcpy(iCSModel, "0.100.Article");
   }
 
 
-  IsegItem model = iseg_getItem( deviceSession_, modelBA );
+  IsegItem model = iseg_getItem( session_, iCSModel );
   if( strcmp( model.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
 
     epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "\033[31;1m%s: Error while reading from device (Q: %s): %s\033[0m", deviceSession_, model.quality, strerror( errno ) );
+                   "\033[31;1m%s: Error while reading from device (Q: %s): %s\033[0m", session_, model.quality, strerror( errno ) );
     return asynError;
   }
   else {
-        printf("\033[0;32m iCS controller model: %s\n\033[0m", model.value);
+        printf("\033[0;33miCS CONTROLLER MODEL '%s'\n\033[0m", model.value);
   }
+  devInitOk_ = 1;
   pasynManager->exceptionConnect( pasynUser );
 
   return asynSuccess;
 
 }
-
 
 /**
 * @brief       Disconnect driver from device
@@ -1382,16 +1119,22 @@ asynStatus drvAsynIseghalService::disconnect(asynUser *pasynUser) {
  std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread:  "<< iseghalExiting_<<"\033[0m" << std::endl;
 
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
-             "%s: disconnect %s\n", deviceSession_, interface_ );
-
-  if(!devDisconnect( deviceSession_ )) {
-    epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-                   "%s: cannot diconnect from %s ", deviceSession_, interface_ );
-    return asynError;
+             "%s: disconnect %s\n", session_, interface_ );
+  // we only disconnect from the device if exiting or if multiple reconnexion
+  // attempts to the current device session failed.
+  if(iseghalExiting_) {
+    if( !devDisconnect( session_ )) {
+      epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+                     "%s: cannot diconnect from %s ", session_, interface_ );
+      return asynError;
+    }
   }
+  // if this call is not a shutdown exit, thus we lost connection to device
+  // iseghal will internally issues a reconnexion to the server. we need to listen to that
+  // inside our connect method called by autoconnect. for that we make the call below:
 
   pasynManager->exceptionDisconnect(pasynUser);
-
+  conMan_ = true;
   return asynSuccess;
 
 }

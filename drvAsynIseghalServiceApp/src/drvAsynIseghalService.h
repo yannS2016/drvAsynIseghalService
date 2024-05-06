@@ -31,7 +31,7 @@
 #include <drvIsegHalPollerThread.h>
 
 /* isegHAL includes */
-#include <isegclientapi.h>
+#include <isegremoteapi.h>
 
 
 /* maximum number of iseghal supported items
@@ -75,9 +75,10 @@ class drvAsynIseghalService : public asynPortDriver {
     char *getSessionName ();
     asynStandardInterfaces getAsynStdIface();
 
+		void conManager(std::string const& name);
     void iseghalPollerTask(void);
     bool iseghalExiting_;
-    asynUser *self_;
+    asynUser *exitUser_;
 
   protected:
     // Values used for pasynUser->reason, and indexes into the parameter library.
@@ -101,11 +102,14 @@ class drvAsynIseghalService : public asynPortDriver {
 
   private:
 
-    char  *deviceSession_;
+    char  *session_;
     char  *interface_;
     char  *deviceModel_;
-    int   itemIndex;
-    std::vector< std::string > session_;
+    int   itemReason_;
+		bool  devInitOk_;
+		bool  conMan_;
+		int   iseghalReconAttempt_;
+    std::vector< std::string > openedSessions;
     std::map<epicsUInt32, std::string> isegHalItemsLookup;
 };
 

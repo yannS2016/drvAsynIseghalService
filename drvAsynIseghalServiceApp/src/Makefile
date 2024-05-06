@@ -12,7 +12,7 @@ ifneq ($(ISEGHAL),)
     USR_LDFLAGS  += -L$(ISEGHAL) -L$(ISEGHAL)/lib
 endif
 
-USR_CXXFLAGS +=-std=c++11
+USR_CXXFLAGS += -Wno-format-truncation -O3 -std=c++11  -g -Wall -mtune=generic -m64 -fPIC
 
 DBD += drvAsynIseghalService.dbd
 

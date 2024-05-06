@@ -53,14 +53,17 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 
   intrUser_data_t *intrUser = (intrUser_data_t *)pasynUser->userData;
   drvIsegHalPoller_uflags_t ifaceType = (drvIsegHalPoller_uflags_t)intrUser->uflags;
-  printf("\033[0;33m%s : %s : reason: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason );
 
-  IsegItem item = EmptyIsegItem;
 	epicsUInt16 mask;
+  IsegItem item = EmptyIsegItem;
 	asynStatus status = asynSuccess;
 
+  printf("\033[0;33m%s : (%s) : reason: '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason );
+
 	if(drvAsynIseghalService_)
+		drvAsynIseghalService_->lock();
 		status = drvAsynIseghalService_->getIsegHalItem(pasynUser, &item);
+		drvAsynIseghalService_->unlock();
 
   if(ifaceType == UINT32DIGITALTYPE) {
     asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
@@ -94,7 +97,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 		int32Value = (epicsInt32)atoi(item.value);
 
 		if(status != asynSuccess) int32Value = NAN;
-				printf("\033[0;33m%s : %s : item value: %s: value: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
+				printf("\033[0;33m%s : %s : %d: item value: %s: value: %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, __LINE__, item.value,int32Value );
     pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
   } else {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
@@ -116,7 +119,7 @@ drvIsegHalPollerThread::drvIsegHalPollerThread(drvAsynIseghalService *portD)
   drvAsynIseghalService_ = portD;
   _pasynIntrUser.clear();
   epicsAtExit(drvIsegHalPollerThreadShutdown, (void*)this);
-  printf("\033[0;33m%s : %s : Init completed...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+  printf("\033[0;33m%s : (%s) : Initialization completed \n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
 }
 
 //------------------------------------------------------------------------------
@@ -236,13 +239,13 @@ void drvIsegHalPollerThread::run()
     intrUserItr _intrUserItr = _pasynIntrUser.begin();
 		int _yesNo = 0;
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
-			//if(pasynManager->isConnected((asynUser *)(*_intrUserItr), &_yesNo) != asynSuccess) continue;
+			if(pasynManager->isConnected((asynUser *)(*_intrUserItr), &_yesNo) != asynSuccess) continue;
       asynStatus status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), (asynQueuePriority)0, 0);
       if (status != asynSuccess) {
         asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  ERROR calling queueRequest\n"
               "status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
       }
-			epicsThreadSleep(.05);
+
     }
   }
 }
