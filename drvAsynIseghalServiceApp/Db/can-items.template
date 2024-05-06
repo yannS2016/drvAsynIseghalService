@@ -1,0 +1,79 @@
+###############################
+# CAN Line items
+###############################
+record( longin, "$(P)$(R):CAN$(ID=0)-Status") {
+    field(DESC, "CAN Line status")
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(CANLINE=0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CAN$(ID=0)-BitRate") {
+    field(DESC, "CAN Line bit rate")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_BitRate($(CANLINE=0))")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CAN$(ID=0)-ModuleNumber") {
+    field(DESC, "Number of Module on CAN Line")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_ModuleNumber($(CANLINE=0))")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CAN$(ID=0)-CrateNumber") {
+    field(DESC, "Number of crates on CAN Line")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_CrateNumber($(CANLINE=0))")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):CAN$(ID=0)-ModuleList") {
+    field(DESC, "List of Module on CAN Line")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_ModuleList($(CANLINE=0))")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):CAN$(ID=0)-CrateList") {
+    field(DESC, "List of crate on CAN Line")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_CrateList($(CANLINE=0))")
+    field(TSE,  "-2")
+}
+
+record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
+    field(DTYP, "asynUInt32Digital")
+    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel($(CANLINE=0))")
+    field(ZRVL, "1")
+    field(ZRST, "Log Errors")
+    field(ONVL, "2")
+    field(ONST, "Log Information")
+    field(TWVL, "4")
+    field(TWST, "Log Api Read")
+    field(THVL, "8")
+    field(THST, "Log Api Write")
+    field(FRVL, "32")
+    field(FRST, "Log Hv CAN Receive")
+    field(SXVL, "64")
+    field(SXST, "Log Hv CAN Read Request")
+    field(SVVL, "128")
+    field(SVST, "Log Hv CAN Write Request")
+    field(EIVL, "256")
+    field(EIST, "Log Lv CAN Receive")
+    field(NIVL, "512")
+    field(NIST, "Log Lv CAN READ Request")
+    field(TEVL, "1024")
+    field(TEST, "Log Lv CAN Write Request")
+    field(ELVL, "2048")
+    field(ELST, "Log Scpi Receive")
+    field(TVVL, "4096")
+    field(TVST, "Log Scpi Read Request")
+    field(TTVL, "8192")
+    field(TTST, "Log Scpi Write Request")
+
+    info(asyn:READBACK, "1")
+    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+}

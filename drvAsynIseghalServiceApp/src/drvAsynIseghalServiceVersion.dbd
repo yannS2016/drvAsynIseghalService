@@ -1,1 +1,1 @@
-device(lsi,INST_IO,drvAsynIseghalServiceVersion,"drvAsynIseghalService version")
+device(lsi,INST_IO,drvAsynIseghalServiceVersion,"AsynIseghalServiceVersion")

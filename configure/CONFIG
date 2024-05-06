@@ -42,4 +42,3 @@ ifdef T_A
   #  Host & target specific settings
  -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 endif
-
