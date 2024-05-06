@@ -1,0 +1,125 @@
+###############################
+# ### System item values ##
+###############################
+
+record( longin, "$(P)$(R):SYS-Status") {
+    field(DESC, "CAN system Status")
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+##Need to had this bit rate as system item
+record( longin, "$(P)$(R):SYS-BitRate") {
+    field(DESC, "CAN System bit rate")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_BitRate")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):SYS-CrateNumber") {
+    field(DESC, "Number of Crate on system")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_CrateNumber")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):SYS-ModuleNumber") {
+    field(DESC, "Number of Module on system")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_ModuleNumber")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):SYS-ModuleList") {
+    field(DESC, "List of Module on CAN Line")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_ModuleList")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):SYS-Read") {
+    field(DESC, "eth0/wlan0")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_Read")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):SYS-CycleCounter") {
+    field(DESC, "Module internal cycle loop counter")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_CycleCounter")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):SYS-LiveInsertionMode") {
+    field(DESC, "Live Insertion mode")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_LiveInsertionMode")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):SYS-SaveConfiguration") {
+    field(DESC, "Save Configuration")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_SaveConfiguration")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):SYS-ServerVersion") {
+    field(DESC, "Server Version")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_ServerVersion")
+    field(TSE,  "-2")
+}
+
+record( stringout, "$(P)$(R):SYS-LogPath") {
+    field(DESC, "isegHAL log path")
+    field(DTYP, "asynOctetWrite")
+    field(OUT,  "@asyn($(PORT))STR_LogPath")
+    field(TSE,  "-2")
+}
+
+record( stringin, "$(P)$(R):SYS-LogPath-RB") {
+    field(DESC, "isegHAL log path")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_LogPath")
+    field(TSE,  "-2")
+}
+
+record(mbbo, "$(P)$(R):SYS-LogLevel") {
+    field(DTYP, "asynUInt32Digital")
+    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel")
+    field(ZRVL, "1")
+    field(ZRST, "Log Errors")
+    field(ONVL, "2")
+    field(ONST, "Log Information")
+    field(TWVL, "4")
+    field(TWST, "Log Api Read")
+    field(THVL, "8")
+    field(THST, "Log Api Write")
+    field(FRVL, "32")
+    field(FRST, "Log Hv CAN Receive")
+    field(SXVL, "64")
+    field(SXST, "Log Hv CAN Read Request")
+    field(SVVL, "128")
+    field(SVST, "Log Hv CAN Write Request")
+    field(EIVL, "256")
+    field(EIST, "Log Lv CAN Receive")
+    field(NIVL, "512")
+    field(NIST, "Log Lv CAN READ Request")
+    field(TEVL, "1024")
+    field(TEST, "Log Lv CAN Write Request")
+    field(ELVL, "2048")
+    field(ELST, "Log Scpi Receive")
+    field(TVVL, "4096")
+    field(TVST, "Log Scpi Read Request")
+    field(TTVL, "8192")
+    field(TTST, "Log Scpi Write Request")
+
+    info(asyn:READBACK, "1")
+    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+}

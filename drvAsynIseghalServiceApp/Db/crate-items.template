@@ -1,0 +1,142 @@
+#######################################################
+# ### Crate items: CC24/CC23/CC44/CC43 only ### #
+#######################################################
+record( longin, "$(P)$(R):CRATE$(ID=1000)-Status") {
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_Status($(LINEADDR=0.1000))")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-StatusHigh")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-StatusHigh") {
+    field(DESC, "Upper 16 bit of module status register")
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status")
+    field(NOBT, "16")
+    field(SHFT, "16")
+    field(TSE,  "-2")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-StatusLow")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-StatusLow") {
+    field(DESC, "Lower 16 bit of module status register")
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status")
+    field(NOBT, "16")
+    field(SHFT, "0")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CRATE$(ID=1000)-EventStatus") {
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_EventStatus($(LINEADDR=0.1000))")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh")
+    field(SCAN, "I/O Intr")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh") {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
+    field(NOBT, "16")
+    field(SHFT, "16")
+    field(TSE,  "-2")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow") {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
+    field(NOBT, "16")
+    field(SHFT, "0")
+    field(TSE,  "-2")
+}
+
+record( longout, "$(P)$(R):CRATE$(ID=1000)-EventMask") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_EventMask($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( ai, "$(P)$(R):CRATE$(ID=1000)-FanSpeed") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_FanSpeed($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoClearEvents") {
+    field(DESC, "do clear all events")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:0($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Do clear event")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-SetEnAct") {
+    field(DESC, "set crate enable active")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:24($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Enable active")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoSetEnAct") {
+    field(DESC, "do set crate enable active")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:25($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Enable active")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-SetHVBkpAuto") {
+    field(DESC, "set HV backplane auto on")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:26($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "HV bkp auto on")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoSetHVBkpAuto") {
+    field(DESC, "do set HV backplane auto on")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:27($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "HV bkp auto on")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CRATE$(ID=1000)-SerialNumber") {
+    field(DESC, "Crate serial number")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_SerialNumber($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-PowerOn") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_PowerOn($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+    field(ZNAM, "Off")
+    field(ONAM, "On")
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareRelease") {
+    field(DESC, "Crate firmware release")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareRelease($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareName") {
+    field(DESC, "Crate firmware name")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareName($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-Article") {
+    field(DESC, "Crate articles")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_Article($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}

@@ -1,0 +1,350 @@
+##############################
+# ### Module item values ### #
+##############################
+record( bi, "$(P)$(R):MOD$(ID=0)-Alive" ) {
+    field(DESC, "Module is alive")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_Alive($(LINEADDR=0.0))")
+    field(ZNAM, "HV module alive" )
+    field(ONAM, "HV module down" )
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+# for maintenance purposes
+record( bo, "$(P)$(R):MOD$(ID=0)-Connected" ) {
+    field(DESC, "set HV module state")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Connected($(LINEADDR=0.0))")
+    field(ZNAM, "HV module disconnected" )
+    field(ONAM, "HV module connected" )
+    field(TSE,  "-2" )
+
+    info(asyn:READBACK, "1")
+}
+
+record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-Status" ) {
+    field(DESC, "Lower 16 bit of module status register" )
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(LINEADDR=0.0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-EventStatus" ) {
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_EventStatus($(LINEADDR=0.0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+record( longin, "$(P)$(R):MOD$(ID=0)-EventMask" ) {
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_EventMask($(LINEADDR=0.0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+record( bo, "$(P)$(R):MOD$(ID=0)-DoClear" ) {
+    field(DESC, "Hardware signal/clear all events")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:6($(LINEADDR=0.0))")
+    field(ZNAM, "" )
+    field(ONAM, "doClear" )
+    field(TSE,  "-2" )
+}
+
+record( bo, "$(P)$(R):MOD$(ID=0)-SetFineAdjustment" ) {
+    field(DESC, "Switch On of fine adjustment")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:12($(LINEADDR=0.0))")
+    field(ZNAM, "FineAdjustment off" )
+    field(ONAM, "FineAdjustment on" )
+    field(TSE,  "-2" )
+}
+
+record( bo, "$(P)$(R):MOD$(ID=0)-SetKillEnable" ) {
+    field(DESC, "Kill function")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:14($(LINEADDR=0.0))")
+    field(ZNAM, "KillEnable off" )
+    field(ONAM, "KillEnable on" )
+    field(TSE,  "-2" )
+}
+
+record( bo, "$(P)$(R):MOD$(ID=0)-disVoltageRampSpeedLimit" ) {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:16($(LINEADDR=0.0))")
+    field(ZNAM, "VoltageRampLimit off" )
+    field(ONAM, "VoltageRampLimit on" )
+    field(TSE,  "-2" )
+}
+
+record( ao, "$(P)$(R):MOD$(ID=0)-VoltageRampSpeed" ) {
+    field(DESC, "Set Module HV Channel voltage Ramp Speed")
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeed($(LINEADDR=0.0))")
+
+    info(asyn:READBACK, "1")
+    field(TSE,  "-2" )
+}
+
+record( ao, "$(P)$(R):MOD$(ID=0)-CurrentRampSpeed" ) {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeed($(LINEADDR=0.0))")
+
+    info(asyn:READBACK, "1")
+    field(TSE,  "-2" )
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-VoltageLimit" ) {
+    field(DESC, "Hardware voltage limit exceeded")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_VoltageLimit($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+    field(SCAN, "I/O Intr")
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-CurrentLimit" ) {
+    field(DESC, "Hardware current limit exceeded")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_CurrentLimit($(LINEADDR=0.0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-Temperature" ) {
+    field(DESC, "Module Internal Temperature")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Temperature($(LINEADDR=0.0))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
+}
+
+record( longin, "$(P)$(R):MOD$(ID=0)-SerialNumber" ) {
+    field(DESC, "Module Serial number")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_SerialNumber($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( longin, "$(P)$(R):MOD$(ID=0)-ChannelNumber" ) {
+    field(DESC, "Number of Channel on module")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_ChannelNumber($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( longin, "$(P)$(R):MOD$(ID=0)-SampleRate" ) {
+    field(DESC, "Acquisition Sample Rate")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_SampleRate($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( longin, "$(P)$(R):MOD$(ID=0)-DigitalFilter" ) {
+    field(DESC, "MICC Module Digital filter")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_DigitalFilter($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareRelease" ) {
+    field(DESC, "Module Firmware release")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareRelease($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareName" ) {
+    field(DESC, "Module Firmware name")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareName($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):MOD$(ID=0)-Article" ) {
+    field(DESC, "Article description")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_Article($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+## MICC
+record( stringout, "$(P)$(R):MOD$(ID=0)-HighVoltageOk" ) {
+    field(DESC, "Enable/Disable HV module")
+    field(DTYP, "asynOctetWrite")
+    field(OUT,  "@asyn($(PORT))STR_HighVoltageOk($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+}
+
+#####################################
+# ### Decoding of Module Status ### #
+#####################################
+record( bi, "$(P)$(R):MOD$(ID=0)-FineAdjustment" ) {
+    field(DESC, "Module state fine adjustment")
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B0 CP" )
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-LiveInsertion" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B2 CP" )
+    field(DESC, "Mode live insertion")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-HighVoltageOn" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B3 CP" )
+    field(DESC, "One channel generate HV")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-needService" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B4 CP" )
+    field(DESC, "Hardware failure state")
+    field(ZNAM, "ok" )
+    field(ONAM, "Hardware failure detected" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-InputError" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B6 CP " )
+    field(DESC, "Error in connection with module access")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MINOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-NoSumError" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B8 CP " )
+    field(DESC, "All channle without failure")
+    field(ZNAM, "Error" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-NoRamp" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B9 CP " )
+    field(DESC, "All channles stable, no ramp active" )
+    field(ZNAM, "channel is ramping" )
+    field(ONAM, "all channels stable" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-SafetyLoopGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BA CP " )
+    field(DESC, "Safety loop closed" )
+    field(ZNAM, "broken" )
+    field(ONAM, "closed" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventActive" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BB CP " )
+    field(DESC, "Any event active and mask set" )
+    field(ZNAM, "no active Event" )
+    field(ONAM, "any event active" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-ModuleGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BC CP " )
+    field(DESC, "Module in good state" )
+    field(ZNAM, "failure" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-SupplyGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BD CP " )
+    field(DESC, "Power supply good" )
+    field(ZNAM, "Out of Range" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-TemperatureGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BE CP " )
+    field(DESC, "Module temperature good" )
+    field(ZNAM, "above 55 degC" )
+    field(ONAM, "within range" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-KillEnable" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BF CP" )
+    field(DESC, "Module state of kill enable" )
+    field(ZNAM, "disabled" )
+    field(ONAM, "enabled" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+###########################################
+# ### Decoding of Module Event Status ### #
+###########################################
+record( bi, "$(P)$(R):MOD$(ID=0)-EventLiveInsertion" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.B2 CP " )
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventService" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.B4 CP " )
+    field(ZNAM, "-" )
+    field(ONAM, "Hardware failure detected" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventInputError" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.B6 CP " )
+    field(ZNAM, "-" )
+    field(ONAM, "Input Error in connection" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventSafetyLoopNotGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.BA CP " )
+    field(ZNAM, "-" )
+    field(ONAM, "Safety loop open" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventSupplyNotGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.BD CP " )
+    field(ZNAM, "-" )
+    field(ONAM, "Supply is not good" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):MOD$(ID=0)-EventTemperatureNotGood" ) {
+    field(INP,  "$(P)$(R):MOD$(ID=0)-EventStatus.BE CP " )
+    field(ZNAM, "-" )
+    field(ONAM, "Temperature above 55 degC" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
