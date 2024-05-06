@@ -60,7 +60,9 @@ std::vector<std::string> validIsegHalItems
    "CrateNumber",
    "CrateList",
    "ModuleNumber",
+	 "ModuleList",
    "CycleCounter",
+   "Read",
    "LogLevel",
    "LogPath",
    "LiveInsertionMode",
@@ -72,7 +74,7 @@ std::vector<std::string> validIsegHalItems
    "SessionName",
    // Can Line items
    "BitRate",
-   // Crate items
+   // Crate/module items
    "Connected",
    "Alive",
    "PowerOn",
@@ -96,7 +98,7 @@ std::vector<std::string> validIsegHalItems
    "DoClear",
    "FineAdjustment",
    "KillEnable" ,
-
+	 "ChannelNumber",
   // MICC option
    "HighVoltageOk",
 
@@ -901,7 +903,7 @@ static const char *skipWhite(const char *pstart, int underscoreOk){
     return p;
 }
 
-int drvAsynIseghalService::hasIsegHalItem (const char *item) {
+int drvAsynIseghalService::hasIsegHalItem(const char *item) {
   std::vector< std::string >::iterator it;
   it = std::find( validIsegHalItems.begin(), validIsegHalItems.end(), std::string(item) );
   if( it != validIsegHalItems.end() ) return true;
@@ -915,70 +917,68 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
   /* the parameter is of format TYPE_item($(ADDR)) where Type is INT for int, DBL for double, or STR for string and DIG for UINT32DIGITAL
   * The fully qualified name (FQN) for gettting/setting an item value is ADDR.item, this is used to create the corresponding iseghalitem parameter.
   */
-  size_t len;
+  unsigned int len = 0;
+	unsigned int prevLen = 0;
   const char *p;
   const char *pnext;
+
+	char halItemType[4];
+  char ctrlhalItemFQNAddr[4];
+  char halItemProperty[FQN_LEN];
+	char tmp[FQN_LEN];
 
   if (strlen(drvInfo) > 4 ) {
 
     pnext = skipWhite(drvInfo,0);
+
     p = pnext;
 
     for(len=0; *pnext && isalpha(*pnext); len++, pnext++){}
 
     if(*pnext==0) {
         epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
-            "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
+            "invalid USERPARAM Must be TYPE'_'/' ''I'tem(ADDR)");
         return asynError;
     }
-
-    char halItemType[len+1];
-    halItemType[len] = 0;
     strncpy(halItemType, p, len);
-
-    //next is item
+    halItemType[len] = 0;
+     //next is item
     p = skipWhite(pnext,1);
     pnext = p;
 
-    if(*p==0 || !isupper(*p)) {
+   if(*p==0 || !isupper(*p)) {
         epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
             "invalid USERPARAM Must be TYPE _/ 'I'tem(ADDR)");
         return asynError;
     }
-
     for(len=0; *p && isalpha(*p); len++, p++){}
     // 3: we expect 2  additional character for control param address
-    int len_ = len+4;
-    char halItem[len];
-    char tmp[len_];
+    strncpy(tmp, pnext, len);
+		prevLen = len;
+		*(tmp+len)=0x0; // terminate string
 
-    strncpy(halItem, pnext, len);
-    *(halItem+len)=0x0; // terminate string
-
-    // Check we have this iseghal item
-    if (!this->hasIsegHalItem(halItem)) {
+    if (!this->hasIsegHalItem(tmp)) {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,
                 "\033[0;33m%s:%s: Parameter '%s' doesn't exist on iseghal item list\n\033[0m",
-                driverName, functionName, halItem);
+                driverName, functionName, tmp);
           // Update alarms status.
       pasynUser->alarmStatus = 17;    // UDF
       pasynUser->alarmSeverity = 3;   // INVALID
       return asynError;
     }
-
-    if(strcmp(halItem, "Control") == 0) {
+		if(strcmp(tmp, "Control") == 0) {
       p++; // skip this ':'
       pnext = p;
       for(len=0; *p && isdigit(*p); len++, p++){}
-      char ctrlAddr[len+1];
-      strncpy(ctrlAddr, pnext, len);
-      epicsSnprintf(tmp, len_, "%s:%s", halItem, ctrlAddr);
-      *(tmp+len_) = 0x0;
+      strncpy(ctrlhalItemFQNAddr, pnext, len);
+			prevLen+=len;
+      epicsSnprintf(halItemProperty, prevLen, "%s:%s", tmp, ctrlhalItemFQNAddr);
+      *(tmp+prevLen) = 0x0;
 
-    } else {
-      strcpy(tmp, halItem);
-      *(tmp+len_) = 0x0;
     }
+    strcpy(halItemProperty, tmp);
+    *(halItemProperty+prevLen) = 0x0;
+		//printf("\033[0;33m%s : (%s) : drvInfo-good: '%s':'%s'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, halItemType, halItemProperty);
 
     char halItemFQN[FQN_LEN];
     //next is addr, no addr for system items
@@ -986,14 +986,14 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
     pnext = strstr(p,"(");
     if(!pnext) {
       //not a system item?
-      if(strcmp(tmp, "Status") == 0 || strcmp(tmp, "CrateNumber") == 0
-        || strcmp(tmp, "ModuleNumber") == 0 || strcmp(tmp, "CycleCounter") == 0 || strcmp(tmp, "Configuration") == 0
-        || strcmp(tmp, "Read") == 0 || strcmp(tmp, "Write ") == 0 || strcmp(tmp, "LogLevel") == 0
-        || strcmp(tmp, "LogPath") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
-        || strcmp(tmp, "SaveConfiguration") == 0 || strcmp(tmp, "LiveInsertionMode") == 0
-        || strcmp(tmp, "ServerVersion") == 0 || strcmp(tmp, "NetworkTimeout") == 0 || strcmp(tmp, "SessionName") == 0) {
+      if(strcmp(halItemProperty, "Status") == 0 || strcmp(halItemProperty, "CrateNumber") == 0 || strcmp(halItemProperty, "BitRate") == 0
+        || strcmp(halItemProperty, "ModuleNumber") == 0 || strcmp(halItemProperty, "CycleCounter") == 0 || strcmp(halItemProperty, "Configuration") == 0
+        || strcmp(halItemProperty, "Read") == 0 || strcmp(halItemProperty, "Write ") == 0 || strcmp(halItemProperty, "LogLevel") == 0
+        || strcmp(halItemProperty, "LogPath") == 0 || strcmp(halItemProperty, "LiveInsertionMode") == 0
+        || strcmp(halItemProperty, "SaveConfiguration") == 0 || strcmp(halItemProperty, "LiveInsertionMode") == 0
+        || strcmp(halItemProperty, "ServerVersion") == 0 || strcmp(halItemProperty, "NetworkTimeout") == 0 || strcmp(halItemProperty, "SessionName") == 0 || strcmp(halItemProperty, "ModuleList") == 0 || strcmp(halItemProperty, "ModuleList") == 0) {
         // Create fully qualified object for system items
-        strcpy(halItemFQN, tmp);
+        strcpy(halItemFQN, halItemProperty);
 
       } else {
         epicsSnprintf(pasynUser->errorMessage,pasynUser->errorMessageSize,
@@ -1003,7 +1003,8 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
         return asynError;
       }
 
-    } else {
+    }
+		else {
       pnext++;
       p = skipWhite(pnext,0);
 
@@ -1014,14 +1015,15 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
           "invalid USERPARAM Must be TYPE _/ item(ADDR)");
               return asynError;
       }
-      char itemAddr[len+1];
-      strncpy(itemAddr, pnext, len);
-      *(itemAddr+len)=0;
-
+      char halItemFQNAddr[6];
+      strncpy(halItemFQNAddr, pnext, len);
+      *(halItemFQNAddr+len)=0;
+			prevLen+=len;
       // Create fully qualified object for system items
-      epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", itemAddr, tmp);
+      epicsSnprintf(halItemFQN, FQN_LEN, "%s.%s", halItemFQNAddr, halItemProperty);
     }
 
+		//printf("\033[0;33m%s : (%s) : drvInfo-good: '%s':'%s':'%s'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, halItemType, halItemProperty, halItemFQN);
     int index;
     if (findParam(halItemFQN, &index) == asynParamNotFound) {
       //Create parameter of the correct type
@@ -1055,7 +1057,7 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
     } else {
       pasynUser->reason = index;
     }
-  }
+	}
 
   return asynSuccess;
 }
