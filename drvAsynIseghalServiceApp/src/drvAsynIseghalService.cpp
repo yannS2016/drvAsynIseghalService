@@ -903,14 +903,15 @@ asynStatus drvAsynIseghalService::drvUserCreate(asynUser *pasynUser, const char 
       pnext = p;
       for(len=0; *p && isdigit(*p); len++, p++){}
       strncpy(ctrlhalItemFQNAddr, pnext, len);
-      prevLen+=len;
+      prevLen+=(len+2);
       epicsSnprintf(halItemProperty, prevLen, "%s:%s", tmp, ctrlhalItemFQNAddr);
-      *(tmp+prevLen) = 0x0;
-
-    }
-    strcpy(halItemProperty, tmp);
-    *(halItemProperty+prevLen) = 0x0;
-    //printf("\033[0;33m%s : (%s) : drvInfo-good: '%s':'%s'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, halItemType, halItemProperty);
+      //printf("\033[0;33m%s : (%s) : address: '%s':'%s' %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, ctrlhalItemFQNAddr, halItemProperty, prevLen);
+      *(halItemProperty+(prevLen)) = 0x0;
+    } else {
+			strcpy(halItemProperty, tmp);
+			*(halItemProperty+prevLen) = 0x0;
+			//printf("\033[0;33m%s : (%s) : drvInfo-good: '%s':'%s'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, halItemType, halItemProperty);
+		}
 
     char halItemFQN[FQN_LEN];
     //next is addr, no addr for system items
