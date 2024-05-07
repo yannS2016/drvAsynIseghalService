@@ -90,7 +90,7 @@ record( stringin, "$(P)$(R):SYS-LogPath-RB") {
     field(TSE,  "-2")
 }
 
-record(longout, "$(P)$(R):SYS-LogLevel") {
+record(mbbo, "$(P)$(R):SYS-LogLevel") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_LogLevel")
     field(ZRVL, "1")

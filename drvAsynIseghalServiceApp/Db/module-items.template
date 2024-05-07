@@ -61,6 +61,8 @@ record( bo, "$(P)$(R):MOD$(ID=0)-SetFineAdjustment" ) {
     field(ZNAM, "FineAdjustment off" )
     field(ONAM, "FineAdjustment on" )
     field(TSE,  "-2" )
+
+    info(asyn:READBACK, "1")
 }
 
 record( bo, "$(P)$(R):MOD$(ID=0)-SetKillEnable" ) {
@@ -70,6 +72,8 @@ record( bo, "$(P)$(R):MOD$(ID=0)-SetKillEnable" ) {
     field(ZNAM, "KillEnable off" )
     field(ONAM, "KillEnable on" )
     field(TSE,  "-2" )
+
+    info(asyn:READBACK, "1")
 }
 
 record( bo, "$(P)$(R):MOD$(ID=0)-disVoltageRampSpeedLimit" ) {
@@ -123,6 +127,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-Temperature" ) {
 
 record( longin, "$(P)$(R):MOD$(ID=0)-SerialNumber" ) {
     field(DESC, "Module Serial number")
+    field(PINI, "RUNNING")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_SerialNumber($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -130,6 +135,7 @@ record( longin, "$(P)$(R):MOD$(ID=0)-SerialNumber" ) {
 
 record( longin, "$(P)$(R):MOD$(ID=0)-ChannelNumber" ) {
     field(DESC, "Number of Channel on module")
+    field(PINI, "RUNNING")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_ChannelNumber($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -137,6 +143,7 @@ record( longin, "$(P)$(R):MOD$(ID=0)-ChannelNumber" ) {
 
 record( longin, "$(P)$(R):MOD$(ID=0)-SampleRate" ) {
     field(DESC, "Acquisition Sample Rate")
+    field(PINI, "RUNNING")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_SampleRate($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -144,6 +151,7 @@ record( longin, "$(P)$(R):MOD$(ID=0)-SampleRate" ) {
 
 record( longin, "$(P)$(R):MOD$(ID=0)-DigitalFilter" ) {
     field(DESC, "MICC Module Digital filter")
+    field(PINI, "RUNNING")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_DigitalFilter($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -151,6 +159,7 @@ record( longin, "$(P)$(R):MOD$(ID=0)-DigitalFilter" ) {
 
 record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareRelease" ) {
     field(DESC, "Module Firmware release")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_FirmwareRelease($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -158,6 +167,7 @@ record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareRelease" ) {
 
 record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareName" ) {
     field(DESC, "Module Firmware name")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_FirmwareName($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -165,6 +175,7 @@ record( stringin, "$(P)$(R):MOD$(ID=0)-FirmwareName" ) {
 
 record( stringin, "$(P)$(R):MOD$(ID=0)-Article" ) {
     field(DESC, "Article description")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_Article($(LINEADDR=0.0))")
     field(TSE,  "-2" )
@@ -192,7 +203,7 @@ record( bi, "$(P)$(R):MOD$(ID=0)-FineAdjustment" ) {
 
 record( bi, "$(P)$(R):MOD$(ID=0)-LiveInsertion" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B2 CP" )
-    field(DESC, "Mode live insertion")
+    field(DESC, "Live insertion mode")
     field(ZNAM, "off" )
     field(ONAM, "on" )
     field(ZSV,  "NO_ALARM" )
@@ -229,28 +240,28 @@ record( bi, "$(P)$(R):MOD$(ID=0)-InputError" ) {
 record( bi, "$(P)$(R):MOD$(ID=0)-NoSumError" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B8 CP " )
     field(DESC, "All channle without failure")
-    field(ZNAM, "Error" )
-    field(ONAM, "ok" )
-    field(ZSV,  "MAJOR" )
-    field(OSV,  "NO_ALARM" )
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-NoRamp" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B9 CP " )
     field(DESC, "All channles stable, no ramp active" )
-    field(ZNAM, "channel is ramping" )
-    field(ONAM, "all channels stable" )
+    field(ZNAM, "all channels stable" )
+    field(ONAM, "channel is ramping" )
     field(ZSV,  "NO_ALARM" )
-    field(OSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-SafetyLoopGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BA CP " )
     field(DESC, "Safety loop closed" )
-    field(ZNAM, "broken" )
-    field(ONAM, "closed" )
-    field(ZSV,  "MAJOR" )
-    field(OSV,  "NO_ALARM" )
+    field(ZNAM, "closed" )
+    field(ONAM, "broken" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-EventActive" ) {
@@ -265,28 +276,28 @@ record( bi, "$(P)$(R):MOD$(ID=0)-EventActive" ) {
 record( bi, "$(P)$(R):MOD$(ID=0)-ModuleGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BC CP " )
     field(DESC, "Module in good state" )
-    field(ZNAM, "failure" )
-    field(ONAM, "ok" )
-    field(ZSV,  "MAJOR" )
-    field(OSV,  "NO_ALARM" )
+    field(ZNAM, "ok" )
+    field(ONAM, "failure" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-SupplyGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BD CP " )
     field(DESC, "Power supply good" )
-    field(ZNAM, "Out of Range" )
-    field(ONAM, "ok" )
-    field(ZSV,  "MAJOR" )
-    field(OSV,  "NO_ALARM" )
+    field(ZNAM, "ok" )
+    field(ONAM, "Out of Range" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-TemperatureGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BE CP " )
     field(DESC, "Module temperature good" )
-    field(ZNAM, "above 55 degC" )
-    field(ONAM, "within range" )
-    field(ZSV,  "MAJOR" )
-    field(OSV,  "NO_ALARM" )
+    field(ZNAM, "within range" )
+    field(ONAM, "above 55 degC" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-KillEnable" ) {

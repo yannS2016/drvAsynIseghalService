@@ -44,7 +44,7 @@ record( stringin, "$(P)$(R):CAN$(ID=0)-CrateList") {
     field(TSE,  "-2")
 }
 
-record(longout, "$(P)$(R):CAN$(ID=0)-LogLevel") {
+record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_LogLevel($(CANLINE=0))")
     field(ZRVL, "1")

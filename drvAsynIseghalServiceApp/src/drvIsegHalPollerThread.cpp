@@ -65,16 +65,21 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 		status = drvAsynIseghalService_->getIsegHalItem(pasynUser, &item);
 		drvAsynIseghalService_->unlock();
 
-  if(ifaceType == UINT32DIGITALTYPE) {
-    asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
+	if(status == asynSuccess) {
+		pasynUser->alarmStatus 		= 0;
+		pasynUser->alarmSeverity	= 0;
+	}
 
+
+  if(ifaceType == UINT32DIGITALTYPE) {
+
+    asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
     epicsUInt32 uInt32Value;
 		uInt32Value =  (epicsUInt32)atoi(item.value) ;
 		mask = pUInt32D->mask;
-
 		if (mask != 0 ) uInt32Value &= mask;
-
 		if(status != asynSuccess) uInt32Value = NAN;
+
 		printf("\033[0;36m%s : (%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value, uInt32Value );
     pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
   }
@@ -82,11 +87,11 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
   else if (ifaceType == FLOAT64TYPE)
   {
     asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
-
     epicsFloat64 float64Value;
 		float64Value = (epicsFloat64)strtod (item.value, NULL);
 		if(status != asynSuccess) float64Value = NAN;
-				printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
+
+		printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
     pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
   }
   else if (ifaceType == INT32TYPE)
@@ -94,9 +99,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
     asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
     epicsInt32 int32Value;
 		int32Value = (epicsInt32)atoi(item.value);
-
 		if(status != asynSuccess) int32Value = NAN;
-				printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
+
+		printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
     pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
   } else {
       asynPrint(pasynUser, ASYN_TRACE_ERROR,

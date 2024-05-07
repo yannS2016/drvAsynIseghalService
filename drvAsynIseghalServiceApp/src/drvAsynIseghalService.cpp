@@ -279,6 +279,8 @@ asynStatus drvAsynIseghalService::getIsegHalItem (asynUser *isegHalUser, IsegIte
       this->disconnect(isegHalUser);
       drvIsegHalPollerThread_->changeIntervall(10.0);
     }
+    isegHalUser->alarmStatus		= 1;
+    isegHalUser->alarmSeverity	= 3;
     return asynError;
   }
 
