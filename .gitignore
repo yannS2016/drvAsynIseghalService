@@ -16,7 +16,7 @@
 /iocBoot/*ioc*/dllPath.bat
 /iocBoot/*ioc*/envPaths
 /iocBoot/*ioc*/relPaths.sh
-
+/iocBoot/*ioc*/*.cmd
 # Build directories
 O.*/
 
