@@ -4,8 +4,8 @@
 
 record( longin, "$(P)$(R):SYS-Status") {
     field(DESC, "CAN system Status")
-    field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_Status")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2")
 }
@@ -90,9 +90,9 @@ record( stringin, "$(P)$(R):SYS-LogPath-RB") {
     field(TSE,  "-2")
 }
 
-record(mbbo, "$(P)$(R):SYS-LogLevel") {
-    field(DTYP, "asynUInt32Digital")
-    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel")
+record(longout, "$(P)$(R):SYS-LogLevel") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_LogLevel")
     field(ZRVL, "1")
     field(ZRST, "Log Errors")
     field(ONVL, "2")
@@ -121,5 +121,5 @@ record(mbbo, "$(P)$(R):SYS-LogLevel") {
     field(TTST, "Log Scpi Write Request")
 
     info(asyn:READBACK, "1")
-    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+    info(DESCRIPTION, "Set Log Level at system level")
 }

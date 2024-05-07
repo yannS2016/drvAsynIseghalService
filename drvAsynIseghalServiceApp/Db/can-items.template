@@ -1,7 +1,7 @@
 ###############################
 # CAN Line items
 ###############################
-record( longin, "$(P)$(R):CAN$(ID=0)-Status") {
+record( mbbiDirect, "$(P)$(R):CAN$(ID=0)-Status") {
     field(DESC, "CAN Line status")
     field(DTYP, "asynUInt32Digital")
     field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(CANLINE=0))")
@@ -44,9 +44,9 @@ record( stringin, "$(P)$(R):CAN$(ID=0)-CrateList") {
     field(TSE,  "-2")
 }
 
-record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
-    field(DTYP, "asynUInt32Digital")
-    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel($(CANLINE=0))")
+record(longout, "$(P)$(R):CAN$(ID=0)-LogLevel") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_LogLevel($(CANLINE=0))")
     field(ZRVL, "1")
     field(ZRST, "Log Errors")
     field(ONVL, "2")
@@ -75,5 +75,80 @@ record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
     field(TTST, "Log Scpi Write Request")
 
     info(asyn:READBACK, "1")
-    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+    info(DESCRIPTION, "Set Log Level on this CAN line")
+}
+
+#####################################
+# ### Decoding of CAN Line Status ### #
+#####################################
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorActive" ) {
+    field(DESC, "CAN State Error Active")
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B0 CP" )
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorWarning" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B1 CP" )
+    field(DESC, "CAN State Error Warning")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorPassive" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B2 CP" )
+    field(DESC, "CAN State Error Passive")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-BusOff" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B3 CP" )
+    field(DESC, "CAN State Bus Off")
+    field(ZNAM, "ok" )
+    field(ONAM, "Bus Off" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Stopped" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B4 CP " )
+    field(DESC, "CAN State Stopped")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Sleeping" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B5 CP " )
+    field(DESC, "CAN State Sleeping")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MINOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-SeriouslyError" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B6 CP " )
+    field(DESC, "CAN State Seriously Error")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Undefined" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B7 CP " )
+    field(DESC, "CAN State Undefined")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MINOR" )
 }

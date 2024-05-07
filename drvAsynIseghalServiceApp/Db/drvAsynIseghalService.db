@@ -4,8 +4,8 @@
 
 record( longin, "$(P)$(R):SYS-Status") {
     field(DESC, "CAN system Status")
-    field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_Status")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2")
 }
@@ -90,9 +90,9 @@ record( stringin, "$(P)$(R):SYS-LogPath-RB") {
     field(TSE,  "-2")
 }
 
-record(mbbo, "$(P)$(R):SYS-LogLevel") {
-    field(DTYP, "asynUInt32Digital")
-    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel")
+record(longout, "$(P)$(R):SYS-LogLevel") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_LogLevel")
     field(ZRVL, "1")
     field(ZRST, "Log Errors")
     field(ONVL, "2")
@@ -121,12 +121,12 @@ record(mbbo, "$(P)$(R):SYS-LogLevel") {
     field(TTST, "Log Scpi Write Request")
 
     info(asyn:READBACK, "1")
-    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+    info(DESCRIPTION, "Set Log Level at system level")
 }
 ###############################
 # CAN Line items
 ###############################
-record( longin, "$(P)$(R):CAN$(ID=0)-Status") {
+record( mbbiDirect, "$(P)$(R):CAN$(ID=0)-Status") {
     field(DESC, "CAN Line status")
     field(DTYP, "asynUInt32Digital")
     field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(CANLINE=0))")
@@ -169,9 +169,9 @@ record( stringin, "$(P)$(R):CAN$(ID=0)-CrateList") {
     field(TSE,  "-2")
 }
 
-record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
-    field(DTYP, "asynUInt32Digital")
-    field(OUT,  "@asynMask($(PORT),0, 0xf)DIG_LogLevel($(CANLINE=0))")
+record(longout, "$(P)$(R):CAN$(ID=0)-LogLevel") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_LogLevel($(CANLINE=0))")
     field(ZRVL, "1")
     field(ZRST, "Log Errors")
     field(ONVL, "2")
@@ -200,9 +200,351 @@ record(mbbo, "$(P)$(R):CAN$(ID=0)-LogLevel") {
     field(TTST, "Log Scpi Write Request")
 
     info(asyn:READBACK, "1")
-    info(DESCRIPTION, "Set RF Control Ouput Sel, on I and Q")
+    info(DESCRIPTION, "Set Log Level on this CAN line")
 }
 
+#####################################
+# ### Decoding of CAN Line Status ### #
+#####################################
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorActive" ) {
+    field(DESC, "CAN State Error Active")
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B0 CP" )
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorWarning" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B1 CP" )
+    field(DESC, "CAN State Error Warning")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-ErrorPassive" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B2 CP" )
+    field(DESC, "CAN State Error Passive")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-BusOff" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B3 CP" )
+    field(DESC, "CAN State Bus Off")
+    field(ZNAM, "ok" )
+    field(ONAM, "Bus Off" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Stopped" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B4 CP " )
+    field(DESC, "CAN State Stopped")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Sleeping" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B5 CP " )
+    field(DESC, "CAN State Sleeping")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MINOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-SeriouslyError" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B6 CP " )
+    field(DESC, "CAN State Seriously Error")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CAN$(ID=0)-Undefined" ) {
+    field(INP,  "$(P)$(R):CAN$(ID=0)-Status.B7 CP " )
+    field(DESC, "CAN State Undefined")
+    field(ZNAM, "ok" )
+    field(ONAM, "Error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MINOR" )
+}
+#######################################################
+# ### Crate items: CC24/CC23/CC44/CC43 only ### #
+#######################################################
+record( longin, "$(P)$(R):CRATE$(ID=1000)-Status") {
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_Status($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CRATE$(ID=1000)-EventStatus") {
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_EventStatus($(LINEADDR=0.1000))")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh")
+    field(SCAN, "I/O Intr")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh") {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
+    field(NOBT, "16")
+    field(SHFT, "16")
+    field(TSE,  "-2")
+    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow")
+}
+
+record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow") {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
+    field(NOBT, "16")
+    field(SHFT, "0")
+    field(TSE,  "-2")
+}
+
+record( longout, "$(P)$(R):CRATE$(ID=1000)-EventMask") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_EventMask($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( ai, "$(P)$(R):CRATE$(ID=1000)-FanSpeed") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_FanSpeed($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoClearEvents") {
+    field(DESC, "do clear all events")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:0($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Do clear event")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-SetEnAct") {
+    field(DESC, "set crate enable active")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:24($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Enable active")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoSetEnAct") {
+    field(DESC, "do set crate enable active")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:25($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "Enable active")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-SetHVBkpAuto") {
+    field(DESC, "set HV backplane auto on")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:26($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "HV bkp auto on")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-DoSetHVBkpAuto") {
+    field(DESC, "do set HV backplane auto on")
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_Control:27($(LINEADDR=0.1000))")
+    field(ZNAM, "")
+    field(ONAM, "HV bkp auto on")
+    field(TSE,  "-2")
+}
+
+record( longin, "$(P)$(R):CRATE$(ID=1000)-SerialNumber") {
+    field(DESC, "Crate serial number")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT))INT_SerialNumber($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+
+record( bo, "$(P)$(R):CRATE$(ID=1000)-PowerOn") {
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT))INT_PowerOn($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+    field(ZNAM, "Off")
+    field(ONAM, "On")
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareRelease") {
+    field(DESC, "Crate firmware release")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareRelease($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareName") {
+    field(DESC, "Crate firmware name")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_FirmwareName($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}
+
+record( stringin, "$(P)$(R):CRATE$(ID=1000)-Article") {
+    field(DESC, "Crate articles")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT))STR_Article($(LINEADDR=0.1000))")
+    field(TSE,  "-2" )
+}
+
+# todo:
+# Status:11 - high +3.3 crate controller
+# Status:10 - low +3.3 crate controller
+# Status:9 - high +5 crate controller
+# Status:8 - low +5 crate controller
+
+#####################################
+# ### Decoding of Crate Status ### #
+#####################################
+record( bi, "$(P)$(R):CRATE$(ID=1000)-Low24VBat" ) {
+    field(DESC, "low +24 battery")
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B0 CP" )
+    field(ZNAM, "ok" )
+    field(ONAM, "low +24 battery" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-High24VBat" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B1 CP" )
+    field(DESC, "high +24 battery")
+    field(ZNAM, "ok" )
+    field(ONAM, "high +24 battery" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-Low5VBp" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B2 CP" )
+    field(DESC, "low +5 backplane")
+    field(ZNAM, "off" )
+    field(ONAM, "on" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-High5VBp" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B3 CP" )
+    field(DESC, "high +5 backplane")
+    field(ZNAM, "ok" )
+    field(ONAM, "high +5 backplane" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-Low24VBp" ) {
+    field(DESC, "low +24 backplane")
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B4 CP" )
+    field(ZNAM, "ok" )
+    field(ONAM, "low +24 backplane" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-High24VBp" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B5 CP" )
+    field(DESC, "high +24 backplane")
+    field(ZNAM, "ok" )
+    field(ONAM, "high +24 backplane" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-needService" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B6 CP " )
+    field(DESC, "service")
+    field(ZNAM, "ok" )
+    field(ONAM, "service" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-Temperature" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.B7 CP " )
+    field(DESC, "high temperature")
+    field(ZNAM, "ok" )
+    field(ONAM, "high temperature" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-SumError" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BC CP " )
+    field(DESC, "sum error" )
+    field(ZNAM, "ok" )
+    field(ONAM, "sum error" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-PowerOn" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BD CP " )
+    field(DESC, "power on" )
+    field(ZNAM, "power off" )
+    field(ONAM, "power on" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-PowerFail" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BE CP " )
+    field(DESC, "Crate Power fail status" )
+    field(ZNAM, "ok" )
+    field(ONAM, "power fail" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-HVOn" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BF CP " )
+    field(DESC, "high voltage on" )
+    field(ZNAM, "HV Off" )
+    field(ONAM, "HV On" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-ShutDown" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BG CP " )
+    field(DESC, "Crate shut down" )
+    field(ZNAM, "alive" )
+    field(ONAM, "shut down" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "MAJOR" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-Enabled" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BH CP " )
+    field(DESC, "Crate enabled" )
+    field(ZNAM, "Disbaled" )
+    field(ONAM, "Enabled" )
+    field(ZSV,  "MINOR" )
+    field(OSV,  "NO_ALARM" )
+}
+
+record( bi, "$(P)$(R):CRATE$(ID=1000)-FastOff" ) {
+    field(INP,  "$(P)$(R):CRATE$(ID=1000)-Status.BI CP" )
+    field(DESC, "Crate fast off" )
+    field(ZNAM, "Off" )
+    field(ONAM, "On" )
+    field(ZSV,  "NO_ALARM" )
+    field(OSV,  "NO_ALARM" )
+}
 ##############################
 # ### Module item values ### #
 ##############################
@@ -553,7 +895,6 @@ record( bi, "$(P)$(R):MOD$(ID=0)-EventTemperatureNotGood" ) {
     field(ZSV,  "NO_ALARM" )
     field(OSV,  "MAJOR" )
 }
-
 ###############################
 # ### Channel item values ### #
 ###############################
