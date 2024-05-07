@@ -45,9 +45,9 @@ static const char *driverName = "drvAsynIseghalService";
 #define FQN_LEN 34
 
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
-epicsMutexId      hookMutexId;
 static drvIsegHalPollerThread *drvIsegHalPollerThread_ = NULL;
 
+epicsMutexId  hookMutexId;
 // stop access of iseghal instance outside of portthread
 bool initStatus = 0;
 
@@ -434,6 +434,7 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
   if(status != asynSuccess) return asynError;
 
   // set new paramter value and update record val field
+
   dVal = (epicsFloat64)strtod (item.value, NULL);
   *value = dVal;
   setDoubleParam (function, dVal );
@@ -1120,7 +1121,6 @@ asynStandardInterfaces drvAsynIseghalService::getAsynStdIface()
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIseghalService::disconnect(asynUser *pasynUser) {
- std::cout << "\033[0;33m " << "( " << __FUNCTION__ << " ) from " << epicsThreadGetNameSelf() << " thread:  "<< iseghalExiting_<<"\033[0m" << std::endl;
 
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
              "%s: disconnect %s\n", session_, interface_ );
@@ -1170,15 +1170,13 @@ extern "C" {
   }
 
   // iocsh function to set options for drv IsegHal Poller Thread
-  static const iocshArg setOptArg0 = { "port", iocshArgString };
-  static const iocshArg setOptArg1 = { "key", iocshArgString };
-  static const iocshArg setOptArg2 = { "value",  iocshArgString };
-  static const iocshArg * const setOptArgs[] = { &setOptArg0, &setOptArg1, &setOptArg2 };
-  static const iocshFuncDef setOptFuncDef = { "drvIsegHalPollerThreadSetOpt", 3, setOptArgs };
+  static const iocshArg setOptArg0 = { "key", iocshArgString };
+  static const iocshArg setOptArg1 = { "value",  iocshArgString };
+  static const iocshArg * const setOptArgs[] = { &setOptArg0, &setOptArg1};
+  static const iocshFuncDef setOptFuncDef = { "drvIsegHalPollerThreadSetOpt", 2, setOptArgs };
 
 	/*** iocsh callable function to set options for the polling thread
 	 * This function can be called from the iocsh via "drvIsegHalPollerThreadSetOpt( PORT, KEY, VALUE )"
-	 * \param[in] PORT is the drvAsynIseghalService internal name of the interface connected to the isegHalServer,
 	 * \param[in] KEY is the name of the option and VALUE the new value for the option.
 	 * KEYs are:
 	 * Intervall - set the wait time after going through the list of records inside polling thread
@@ -1187,22 +1185,22 @@ extern "C" {
 	static void setOptCallFunc( const iocshArgBuf *args )
 	{
 		// Set new intervall for polling thread
-		if( strcmp( args[1].sval, "Intervall" ) == 0 ) {
+		if( strcmp( args[0].sval, "Intervall" ) == 0 ) {
 			double pollingFreq = 0.;
-			int n = sscanf( args[2].sval, "%lf", &pollingFreq );
+			int n = sscanf( args[1].sval, "%lf", &pollingFreq );
 			if( 1 != n ) {
-					fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[1].sval, args[2].sval );
+					fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
 					return;
 			}
 				drvIsegHalPollerThread_->changeIntervall( pollingFreq );
 		}
 
 		// Set new debug level
-		if( strcmp( args[1].sval, "debug" ) == 0 ) {
+		if( strcmp( args[0].sval, "debug" ) == 0 ) {
 			unsigned dbgLevel = 0;
-			int n = sscanf( args[2].sval, "%u", &dbgLevel );
+			int n = sscanf( args[1].sval, "%u", &dbgLevel );
 			if( 1 != n ) {
-				fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[1].sval, args[2].sval );
+				fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
 				return;
 			}
 			drvIsegHalPollerThread_->setDbgLvl( dbgLevel );
