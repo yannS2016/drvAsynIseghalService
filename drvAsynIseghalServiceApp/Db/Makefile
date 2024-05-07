@@ -5,7 +5,12 @@ include $(TOP)/configure/CONFIG
 
 # Install databases, templates & substitutions like this
 DB += drvAsynIseghalServiceVersion.db
-
+DB += drvAsynIseghalService.db
+DB += system-items.template
+DB += can-items.template
+DB += crate-items.template
+DB += crate-items.template
+DB += module-items.template
 # If <anyname>.db template is not named <anyname>*.template add
 # <anyname>_TEMPLATE = <templatename>
 
