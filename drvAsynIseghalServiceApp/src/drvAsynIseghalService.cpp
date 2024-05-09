@@ -45,7 +45,7 @@ static const char *driverName = "drvAsynIseghalService";
 #define WRITE_BUF_LEN 	8
 #define ITEM_TYPE_LEN		4
 #define ITEM_FQN_LEN 		34
-#define ITEM_ADDR_LEN 	5
+#define ITEM_ADDR_LEN 	6
 
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
@@ -1009,6 +1009,7 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
       for( len=0; *p && isdigit( *p ) && ( *p!=']' ); len++, p++ ){}
 
       strncpy( itemSubAddr, pnext, len+2 );
+			*( itemSubAddr+len+2 ) = 0;
       prevLen+=len+2;
 			strcat ( iHalItem, itemSubAddr );
 			p++;
