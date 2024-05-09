@@ -542,8 +542,8 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
   itemIter it = isegHalItemsLookup.find( function );
 
   if ( it != isegHalItemsLookup.end( ) ) {
-
-    if( it->second == "Status" ) {
+		// Skip writing to Status or EventStatus 
+    if( it->second == "Status" || it->second == "EventStatus") {
       return asynSuccess;
     }
   }
@@ -863,9 +863,9 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
   char iHalItem[ITEM_FQN_LEN];
   char iHalItemFQN[ITEM_FQN_LEN];
 	char iHalItemAddr[ITEM_ADDR_LEN];
-	
+
 	static bool firstPass = true;
-	
+
   if ( strlen( drvInfo ) > 4 /* && firstPass */ ) {
 
     pnext = skipWhite( drvInfo,0 );
@@ -897,7 +897,7 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
     strncpy( iHalItem, pnext, len );
 
     prevLen = len;
-    *( iHalItem+len ) = 0; 
+    *( iHalItem+len ) = 0;
 
     if ( !this->hasIsegHalItem( iHalItem ) ) {
       asynPrint( pasynUser, ASYN_TRACE_ERROR,
@@ -919,7 +919,7 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
 								"invalid userparam: Sub address must be - %s:digit's'", iHalItem );
 						return asynError;
 				}
-			
+
 				for( len=0; *p && isdigit( *p ); len++, p++ ){}
 				strncpy( itemSubAddr, pnext, len+1 );
 				*( itemSubAddr+len+1 ) = 0;
@@ -933,7 +933,7 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
 				pasynUser->alarmSeverity = 3;
 				return asynError;
 			}
-		} 
+		}
 
 		if ( *p=='[' ) {
 			pnext = p;
@@ -962,12 +962,12 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
 							"invalid userparam: item address format is: - %s( digit's' )", iHalItem );
 					return asynError;
 			}
-			
+
 			/* To do: add aadress format validator
-			 * 				correct formats: digit / digit.digit / digit.digit.digit 
+			 * 				correct formats: digit / digit.digit / digit.digit.digit
 			*/
       for( len=0; *p && ( *p!=' ' ) && ( *p!=')' ); len++, p++ ){}
-			
+
 			if( len > ITEM_ADDR_LEN ) {
 					epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
 							"invalid userparam: Wrong format for item '%s' address", iHalItem );
@@ -1005,8 +1005,8 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
         pasynUser->alarmStatus		= 17;		// UDF
         pasynUser->alarmSeverity	= 3;		// INVALID
         return asynError;
-			} 
-			
+			}
+
 		}
 		//printf( "\033[0;33m%s : ( %s ) : FQN: '%s'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__,iHalItemFQN );
 
