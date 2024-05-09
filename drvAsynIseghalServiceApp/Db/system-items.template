@@ -57,7 +57,7 @@ record( longin, "$(P)$(R):SYS-CycleCounter") {
 record( longin, "$(P)$(R):SYS-LiveInsertionMode") {
     field(DESC, "Live Insertion mode")
     field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT))INT_LiveInsertionMode")
+    field(INP,  "@asyn($(PORT))INT_LiveInsertion")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2")
 }
