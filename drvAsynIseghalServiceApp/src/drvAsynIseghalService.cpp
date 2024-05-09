@@ -87,8 +87,8 @@ std::vector<std::string> isValidIsegHalItems
    "DeviceClass",
    "FirmwareRelease",
    "FirmwareName",
-   "Temperature" ,
-   "Supply",
+   "Temperatures" ,
+   "Supplies",
    "Article",
 
    // device/module items
@@ -103,6 +103,7 @@ std::vector<std::string> isValidIsegHalItems
    "FineAdjustment",
    "KillEnable" ,
    "ChannelNumber",
+   "Temperatures" ,
   // MICC option
    "HighVoltageOk",
 
