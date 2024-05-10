@@ -43,67 +43,67 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-FanSpeed") {
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[0]" ) {
-		field(DESC, "Crate Internal Temperature")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Temperatures[0]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Crate Internal Temperature")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Temperatures[0]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[1]" ) {
-		field(DESC, "Crate Internal Temperature")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Temperatures[1]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Crate Internal Temperature")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Temperatures[1]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[2]" ) {
-		field(DESC, "Crate Internal Temperature")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Temperatures[2]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Crate Internal Temperature")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Temperatures[2]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Backplane24V" ) {
-		field(DESC, "Backplane +24V ")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Supplies[0]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Backplane +24V ")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Supplies[0]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Backplane5V" ) {
-		field(DESC, "Backplane +5V ")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Supplies[2]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Backplane +5V ")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Supplies[2]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Supply5V" ) {
-		field(DESC, "Supply +5V")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Supplies[5]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Supply +5V")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Supplies[5]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Supply3V3" ) {
-		field(DESC, "Supply +3.3V")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Supplies[6]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Supply +3.3V")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Supplies[6]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Bat24V" ) {
-		field(DESC, "Battery +24V")
-		field(DTYP, "asynFloat64")
-		field(INP,  "@asyn($(PORT))DBL_Supplies[8]($(LINEADDR=0.1000))")
-		field(SCAN, "I/O Intr")
-		field(TSE,  "-2" )
+    field(DESC, "Battery +24V")
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_Supplies[8]($(LINEADDR=0.1000))")
+    field(SCAN, "I/O Intr")
+    field(TSE,  "-2" )
 }
 
 record( bo, "$(P)$(R):CRATE$(ID=1000)-DoClearEvents") {
@@ -152,7 +152,7 @@ record( bo, "$(P)$(R):CRATE$(ID=1000)-DoSetHVBkpAuto") {
 }
 
 record( longin, "$(P)$(R):CRATE$(ID=1000)-SerialNumber") {
-		field(PINI, "RUNNING")
+    field(PINI, "RUNNING")
     field(DESC, "Crate serial number")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_SerialNumber($(LINEADDR=0.1000))")
@@ -171,7 +171,7 @@ record( bo, "$(P)$(R):CRATE$(ID=1000)-PowerOn") {
 
 record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareRelease") {
     field(DESC, "Crate firmware release")
-		field(PINI, "RUNNING")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_FirmwareRelease($(LINEADDR=0.1000))")
     field(TSE,  "-2" )
@@ -179,7 +179,7 @@ record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareRelease") {
 
 record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareName") {
     field(DESC, "Crate firmware name")
-		field(PINI, "RUNNING")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_FirmwareName($(LINEADDR=0.1000))")
     field(TSE,  "-2" )
@@ -187,7 +187,7 @@ record( stringin, "$(P)$(R):CRATE$(ID=1000)-FirmwareName") {
 
 record( stringin, "$(P)$(R):CRATE$(ID=1000)-Article") {
     field(DESC, "Crate articles")
-		field(PINI, "RUNNING")
+    field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_Article($(LINEADDR=0.1000))")
     field(TSE,  "-2" )
