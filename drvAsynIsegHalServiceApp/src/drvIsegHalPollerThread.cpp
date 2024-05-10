@@ -40,13 +40,22 @@ drvAsynIsegHalService *drvAsynIsegHalService_= NULL;
 /* Called by epicsAtExit to shutdown iseghal session */
 static void drvIsegHalPollerThreadShutdown( void* pdrv)
 {
-  asynStatus status;
   drvIsegHalPollerThread *pPvt = (drvIsegHalPollerThread *) pdrv;
   pPvt->_drvIsegHalPollerThreadExiting = true;
   printf("\033[0;36m%s:%s Shutting down...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
   delete pPvt;
 }
 
+/*
+  * @brief   Interrupt Users callback for Clean device access in port driver 
+  *          each registered Interrupt as a duplicate asynuser  thats registered this callback for device
+	*          access within the port thread: this feature is used because the device handle does not allow
+	*          access to the Qt SSL socket outside the creating thread, aka. Asyn Port Thread.
+	*          Thus, queued requests from their duplicates use this method to cleanly access the device
+  *
+  * @param  [in]  pasynUser  pasynUser structure that encodes the reason and address.
+	*
+*/
 static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 {
   static const char *functionName="drvIsegHalPollerThreadCallackBack";
@@ -70,44 +79,50 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 		pasynUser->alarmSeverity	= 0;
 	}
 
+	switch(ifaceType) {
 
-  if(ifaceType == UINT32DIGITALTYPE) {
+		case FLOAT64TYPE:
+			{
+				asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
+				epicsFloat64 float64Value;
+				float64Value = (epicsFloat64)strtod (item.value, NULL);
+				if(status != asynSuccess) float64Value = NAN;
+				printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
+				pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
+				break;
+			}
 
-    asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
-    epicsUInt32 uInt32Value;
-		uInt32Value =  (epicsUInt32)atoi(item.value) ;
-		mask = pUInt32D->mask;
-		if (mask != 0 ) uInt32Value &= mask;
-		if(status != asynSuccess) uInt32Value = NAN;
+		case UINT32DIGITALTYPE:
+			{
+				asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
+				epicsUInt32 uInt32Value;
+				uInt32Value =  (epicsUInt32)atoi(item.value) ;
+				mask = pUInt32D->mask;
+				if (mask != 0 ) uInt32Value &= mask;
+				if(status != asynSuccess) uInt32Value = NAN;
+				printf("\033[0;36m%s : (%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value, uInt32Value );
+				pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
+				break;
+			}
 
-		printf("\033[0;36m%s : (%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value, uInt32Value );
-    pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
-  }
+		case INT32TYPE:
+			{
+				asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
+				epicsInt32 int32Value;
+				int32Value = (epicsInt32)atoi(item.value);
+				if(status != asynSuccess) int32Value = NAN;
+				printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
+				pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
+				break;
+			}
 
-  else if (ifaceType == FLOAT64TYPE)
-  {
-    asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
-    epicsFloat64 float64Value;
-		float64Value = (epicsFloat64)strtod (item.value, NULL);
-		if(status != asynSuccess) float64Value = NAN;
-
-		printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
-    pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
-  }
-  else if (ifaceType == INT32TYPE)
-  {
-    asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
-    epicsInt32 int32Value;
-		int32Value = (epicsInt32)atoi(item.value);
-		if(status != asynSuccess) int32Value = NAN;
-
-		printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
-    pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
-  } else {
-      asynPrint(pasynUser, ASYN_TRACE_ERROR,
+		default:
+				asynPrint(pasynUser, ASYN_TRACE_ERROR,
           "%s Undefined Interface\n",functionName);
-      return;
-  }
+				break;
+
+	}
+
 }
 
 /*
@@ -147,10 +162,18 @@ drvIsegHalPollerThread::~drvIsegHalPollerThread()
  _intrUser_data_gbg.clear();
  drvAsynIsegHalService_ = NULL;
 
- printf("\033[0;36m%s:%s Poller thread cleaning up completed!\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+ printf("\033[0;36m%s:%s Cleaning up completed!\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
 
 }
 
+/*
+  * @brief   Poller thread runtime method 
+  *
+	* When this poller object is instantiated in the drvAsynIsegHalService instance after the IOC gets in running state
+	* We build a local list of duplicate interrupt users by registering a special callback for each.
+	* After the thread is started, we queue each request to the port thread to cleanly access the device.
+	*
+*/
 void drvIsegHalPollerThread::run()
 {
   ELLLIST *pclientList;
@@ -189,6 +212,7 @@ void drvIsegHalPollerThread::run()
     pInt32 = (asynInt32Interrupt *)pnode->drvPvt;
     pasynUser = pasynManager->duplicateAsynUser(pInt32->pasynUser, drvIsegHalPollerThreadCallackBack,0);
     intrUser_data_t *_intrUser = (intrUser_data_t *)mallocMustSucceed(sizeof(intrUser_data_t), "Failed to alloc UInt32D Intr User data");
+
     pasynUser->reason = pInt32->pasynUser->reason;
     _intrUser->uflags = INT32TYPE;
     _intrUser->intrHandle = (void*)pInt32;
@@ -214,12 +238,14 @@ void drvIsegHalPollerThread::run()
     pFloat64 = (asynFloat64Interrupt *)pnode->drvPvt;
     pasynUser = pasynManager->duplicateAsynUser(pFloat64->pasynUser, drvIsegHalPollerThreadCallackBack,0);
     intrUser_data_t *_intrUser = (intrUser_data_t *)mallocMustSucceed(sizeof(intrUser_data_t), "Failed to alloc UFloat64D Intr User data");
+
     pasynUser->reason = pFloat64->pasynUser->reason;
     _intrUser->uflags = FLOAT64TYPE;
     _intrUser->intrHandle = (void*)pFloat64;
     pasynUser->userData = (void*)_intrUser;
     _pasynIntrUser.push_back(pasynUser);
     _intrUser_data_gbg.push_back(_intrUser);
+
     // to be sure that each asynUser is only added once
     _pasynIntrUser.sort();
     _pasynIntrUser.unique();
@@ -232,7 +258,7 @@ void drvIsegHalPollerThread::run()
   while(true) {
 
     if( _drvIsegHalPollerThreadExiting ) {
-      printf("\033[0;36m%s:%s Exiting Poller thread...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+      printf("\033[0;36m%s:%s Exiting poller thread...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
       break;
     }
 
@@ -244,12 +270,11 @@ void drvIsegHalPollerThread::run()
 		int _yesNo = 0;
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
 			if(pasynManager->isConnected((asynUser *)(*_intrUserItr), &_yesNo) != asynSuccess) continue;
-      asynStatus status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), (asynQueuePriority)0, 0);
+      status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), (asynQueuePriority)0, 0);
       if (status != asynSuccess) {
         asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  ERROR calling queueRequest\n"
               "status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
       }
-
     }
   }
 }
