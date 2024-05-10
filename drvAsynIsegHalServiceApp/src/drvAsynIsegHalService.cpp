@@ -104,7 +104,7 @@ std::vector<std::string> isValidIsegHalItems
    "FineAdjustment",
    "KillEnable" ,
    "ChannelNumber",
-   "Temperatures" ,
+   "Temperature" ,
   // MICC option
    "HighVoltageOk",
 
