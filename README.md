@@ -23,7 +23,7 @@ More info: [ICS](https://iseg-hv.com/ics/)
  1.  Edit 'configure/RELEASE.local' and change the paths to ASYN and EPICS_BASE
  2.  Edit 'configure/RELEASE.local' and set the TOP path for ISEGHAL header and library.
  3.  Type `make install` to compile the package.
-    
+
 Note:
 -  isegHAL Service header files are searched in `$ISEGHAL` and `$ISEGHAL/include`, and the shared object files in `$ISEGHAL` and `$ISEGHAL/lib`.
 
@@ -40,11 +40,11 @@ where `ISEGHALSESSION` is the name used by Asyn to identify the driver and the i
 and `autoConnect` is a flag that whether the driver should automatically connect to the device must be set to 1.
 
 ## Records
-EPICS records using `drvAsynIsegHalService`, set its `DTYP` field to one of the supported Asyn interfaces registered by the driver. The driver provides an asynUINT32Digital interface for read/writing Status related isegHal items. asynInt32, aysnFloat64, and asynOctet interfaces are provided for reading other isegHAL items data types. Nonetheless, status-related items can be accessed using the asynInt32 interface too. 
+EPICS records using `drvAsynIsegHalService`, set its `DTYP` field to one of the supported Asyn interfaces registered by the driver. The driver provides an asynUINT32Digital interface for read/writing Status related isegHal items. asynInt32, aysnFloat64, and asynOctet interfaces are provided for reading other isegHAL items data types. Nonetheless, status-related items can be accessed using the asynInt32 interface too.
 
 This driver provides generic access to the supported iCS control systems devices. That is, device address access for the related isegHAL item is done via predefined port  driver user parameters. Instead, This is done at the record level and inside the driver using the `asynDrvUser` interface. The Database records INP and OUT links follow this format: `@asyn($(PORT))TYPE_ValidItem($(ADDR=0.1000)). `
 
-Here `TYPE` is `INT, DBL, DIG or STR`. `ValidItem` is a valid isegHAL items. And `ADDR` is the item's address within the connected CAN system. 
+Here `TYPE` is `INT, DBL, DIG or STR`. `ValidItem` is a valid isegHAL items. And `ADDR` is the item's address within the connected CAN system.
 The `TYPE_ValidItem($(ADDR=0.1000)) ` drvInfo string is parsed to build the fully qualified name, FQN for the isegHAL item, i.e `0.1000.ValidItem` associated with the correct port driver registered interface for its `TYPE`.
 
 isegHAL provides its timestamp for the last time a value was changed (timeStampLastChanged). To use it as the record's timestamp, the TSE field has to be set to -2.
