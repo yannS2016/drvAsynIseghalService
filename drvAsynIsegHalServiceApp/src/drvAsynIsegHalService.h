@@ -2,14 +2,14 @@
 // Copyright (C) 2014 Yann Stephen Mandza <yann.mandza@ess.se>
 //                    - European Spallation Source - ESS
 //
-// This file is part of drvAsynIseghalService
+// This file is part of drvAsynIsegHalService
 //
-// drvAsynIseghalService is free software; you can redistribute it and/or modify
+// drvAsynIsegHalService is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
 //
-// drvAsynIseghalService is distributed in the hope that it will be useful,
+// drvAsynIsegHalService is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
@@ -50,9 +50,9 @@
   * or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported.
   *
 */
-class drvAsynIseghalService : public asynPortDriver {
+class drvAsynIsegHalService : public asynPortDriver {
   public:
-    drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
+    drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
     // These are the methods that we override from asynPortDriver
     virtual asynStatus readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask );
     virtual asynStatus writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask );
@@ -73,7 +73,7 @@ class drvAsynIseghalService : public asynPortDriver {
     int isValidIsegHalItem (const char *item);
     asynStandardInterfaces getAsynStdIface();
 		asynStatus getIsegHalItem (asynUser *isegHalUser, IsegItem *item);
-		
+
     bool iseghalExiting_;
     asynUser *exitUser_;
 

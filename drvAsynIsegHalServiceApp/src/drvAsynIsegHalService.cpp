@@ -1,4 +1,4 @@
-/* drvAsynIseghalService.cpp
+/* drvAsynIsegHalService.cpp
  *
  * EPICS Asyn Driver for ISEG HV/LV PS systems based the unified iseg control platform 'iCS'
  * capable systems i.e iCSmini 2, CC24 and SHR(not tested yet) controllers
@@ -38,23 +38,24 @@
 #include <asynCommonSyncIO.h>
 
 // local includes
-#include "drvAsynIseghalService.h"
+#include "drvAsynIsegHalService.h"
 
-static const char *driverName = "drvAsynIseghalService";
+static const char *driverName = "drvAsynIsegHalService";
 
-#define WRITE_BUF_LEN 	8
-#define ITEM_TYPE_LEN		4
-#define ITEM_FQN_LEN 		34
-#define ITEM_ADDR_LEN 	6
+#define WRITE_BUF_LEN   8
+#define ITEM_TYPE_LEN   4
+#define ITEM_FQN_LEN    34
+#define ITEM_ADDR_LEN   6
 
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
 // Handle for Poller Thread
 static drvIsegHalPollerThread *drvIsegHalPollerThread_ = NULL;
 
-// stop access of iseghal instance outside of port thread at init
+// No access of iseghal instance outside of port thread at init
 bool initStatus = 0;
 
+// Valid isegHal items lookup table.
 std::vector<std::string> isValidIsegHalItems
 {
    "Status",
@@ -181,44 +182,49 @@ std::vector<std::string> isValidIsegHalItems
 };
 
 
-/** Called by epicsAtExit to shutdown iseghal session */
+/** Called by epicsAtExit to shutdown iseghal session
+  * This ensure that disconnection cleanly happens inside the port thread
+*/
 static void iseghalSessionShutdown( void* pDrv ) {
   asynStatus status;
-  drvAsynIseghalService *pPvt = ( drvAsynIseghalService * ) pDrv;
+  drvAsynIsegHalService *pPvt = ( drvAsynIsegHalService * ) pDrv;
   pPvt->iseghalExiting_ = true;
   status =  pasynCommonSyncIO->disconnectDevice( pPvt->exitUser_ );
   if( status!=asynSuccess )
-        asynPrint( pPvt->exitUser_, ASYN_TRACE_ERROR, "%s: drvAsynIseghalService cleanup  error %s\n", pPvt->portName, pPvt->exitUser_->errorMessage );
+        asynPrint( pPvt->exitUser_, ASYN_TRACE_ERROR, "%s: drvAsynIsegHalService cleanup  error %s\n", pPvt->portName, pPvt->exitUser_->errorMessage );
 }
 
-// all record have been initialized
+/*
+ * Start the polling thread when IOC is in running state
+ * we want all interrupt lists filled and ready before the polling thread kicks in.
+*/
 static void startPolling( initHookState state ) {
-    if ( state == initHookAfterIocRunning ) {
-      initStatus = 1;
-      // all record init done: interrupt list filled
-      if( drvIsegHalPollerThread_ != NULL ) {
-        drvIsegHalPollerThread_->thread.start( );
-      }
+  if ( state == initHookAfterIocRunning ) {
+    initStatus = 1;
+    // all record init done: interrupt list filled
+    if( drvIsegHalPollerThread_ != NULL ) {
+      drvIsegHalPollerThread_->thread.start( );
     }
+  }
 }
 
-drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
+drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
   : asynPortDriver( portName,
-    1, 																// maxAddr
+    1,                                // maxAddr
     NITEMS,
-																			// Interface mask
+                                      // Interface mask
     asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask | asynDrvUserMask,
     asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
-    ASYN_CANBLOCK |ASYN_MULTIDEVICE,	// asynFlags.
-    autoConnect, 											// Autoconnect
-    0, 																// Default priority
-    0 ), 															// Default stack size
+    ASYN_CANBLOCK | ASYN_MULTIDEVICE, // asynFlags.
+    autoConnect,                      // Autoconnect
+    0,                                // Default priority
+    0 ),                              // Default stack size
     iseghalExiting_( false ),
     conMan_( false ),
     reconAttempt_( 10 )
 
 {
-    static const char *functionName = "drvAsynIseghalService";
+    static const char *functionName = "drvAsynIsegHalService";
 
     session_      = epicsStrDup( portName );
     interface_    = epicsStrDup( interface );
@@ -250,7 +256,6 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
     // instantiate the polling thread, but dont start yet.
     drvIsegHalPollerThread_ = new drvIsegHalPollerThread( this );
     if( !drvIsegHalPollerThread_ ) return;
-
 }
 
 /*
@@ -264,7 +269,7 @@ drvAsynIseghalService::drvAsynIseghalService( const char *portName, const char *
 *           in pasynUser->errorMessage.
 */
 
-asynStatus drvAsynIseghalService::getIsegHalItem ( asynUser *isegHalUser, IsegItem *item )
+asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegItem *item )
 {
   static const char *functionName = "getIsegHalItem";
   const char *propertyName;
@@ -293,8 +298,8 @@ asynStatus drvAsynIseghalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
       this->disconnect( isegHalUser );
       drvIsegHalPollerThread_->changeIntervall( 10.0 );
     }
-    isegHalUser->alarmStatus		= 1;
-    isegHalUser->alarmSeverity	= 3;
+    isegHalUser->alarmStatus    = 1;
+    isegHalUser->alarmSeverity  = 3;
     return asynError;
   }
 
@@ -315,7 +320,7 @@ asynStatus drvAsynIseghalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
 
   if( strcmp( item->quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
     epicsSnprintf( isegHalUser->errorMessage,isegHalUser->errorMessageSize,
-		"\033[31;1m%s:%s Read Error ( Q: %s ): %s\033[0m", session_, functionName, item->quality, strerror( errno ) );
+    "\033[31;1m%s:%s Read Error ( Q: %s ): %s\033[0m", session_, functionName, item->quality, strerror( errno ) );
 
     isegHalUser->alarmStatus = 1;
     isegHalUser->alarmSeverity = 3;
@@ -344,16 +349,16 @@ asynStatus drvAsynIseghalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
 }
 
 /*
-	* @brief   Called when asyn clients call pasynFloat64->write( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      Value to write
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynFloat64->write( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      Value to write
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value )
+asynStatus drvAsynIsegHalService::writeFloat64( asynUser *pasynUser, epicsFloat64 value )
 {
 
   static const char *functionName = "writeFloat64";
@@ -438,7 +443,7 @@ asynStatus drvAsynIseghalService::writeFloat64( asynUser *pasynUser, epicsFloat6
 *           asynError or asynTimeout is returned. A error message is stored
 *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value )
+asynStatus drvAsynIsegHalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value )
 {
   static const char *functionName = "readFloat64";
 
@@ -474,17 +479,17 @@ asynStatus drvAsynIseghalService::readFloat64( asynUser *pasynUser, epicsFloat64
 }
 
 /*
-	* @brief   Called when asyn clients call pasynUInt32Digital->read( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      Address of the value to read
-	* @param   [in]  mask       Mask value to use when reading the value.
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynUInt32Digital->read( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      Address of the value to read
+  * @param   [in]  mask       Mask value to use when reading the value.
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask )
+asynStatus drvAsynIsegHalService::readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask )
 {
 
   static const char *functionName = "readUInt32Digital";
@@ -492,7 +497,7 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
   asynStatus status = asynSuccess;
   IsegItem item = EmptyIsegItem;
   epicsUInt32 iVal = 0;
-	epicsInt16 function = pasynUser->reason;
+  epicsInt16 function = pasynUser->reason;
 
   printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
 
@@ -520,17 +525,17 @@ asynStatus drvAsynIseghalService::readUInt32Digital( asynUser *pasynUser, epicsU
 
 
 /*
-	* @brief   Called when asyn clients call pasynUInt32Digital->write( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      Value to write
-	* @param   [in]  mask       Mask value to use when reading the value.
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynUInt32Digital->write( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      Value to write
+  * @param   [in]  mask       Mask value to use when reading the value.
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask )
+asynStatus drvAsynIsegHalService::writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask )
 {
   static const char *functionName = "writeUInt32Digital";
 
@@ -556,8 +561,8 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
   itemIter it = isegHalItemsLookup.find( function );
 
   if ( it != isegHalItemsLookup.end( ) ) {
-		// Skip writing to Status or EventStatus 
-    if( it->second == "Status" || it->second == "EventStatus") {
+    // Skip writing to Status
+    if( it->second == "Status" ) {
       return asynSuccess;
     }
   }
@@ -580,12 +585,12 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
       "\033[31;1m%s:%s Wrong permission on iseghal item %s access right: '%s'\033[0m\n",
       session_, functionName, propertyName, iHalItem.access );
 
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
+    pasynUser->alarmStatus    = 2;
+    pasynUser->alarmSeverity  = 3;
 
     return asynError;
   }
-	
+
   char sVal[WRITE_BUF_LEN];
   epicsSnprintf( sVal, WRITE_BUF_LEN, "%d", ( value & mask ) );
 
@@ -594,14 +599,13 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
       "%s:%s: Write Error - value '%d' for %s : %s",
       session_, functionName, value, propertyName, strerror( errno ) );
 
-    pasynUser->alarmStatus = 2;
-    pasynUser->alarmSeverity = 3;
-
+    pasynUser->alarmStatus    = 2;
+    pasynUser->alarmSeverity  = 3;
     return asynError;
   }
 
-  pasynUser->alarmStatus = 0;
-  pasynUser->alarmSeverity = 0;
+  pasynUser->alarmStatus    = 0;
+  pasynUser->alarmSeverity  = 0;
 
   getTimeStamp( &timeStamp );
   pasynUser->timestamp = timeStamp;
@@ -622,16 +626,16 @@ asynStatus drvAsynIseghalService::writeUInt32Digital( asynUser *pasynUser, epics
 }
 
 /*
-	* @brief   Called when asyn clients call pasynInt32->read( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      Address of the value to read
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynInt32->read( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      Address of the value to read
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::readInt32( asynUser *pasynUser, epicsInt32 *value ) {
+asynStatus drvAsynIsegHalService::readInt32( asynUser *pasynUser, epicsInt32 *value ) {
 
   static const char *functionName = "readInt32";
 
@@ -666,16 +670,16 @@ asynStatus drvAsynIseghalService::readInt32( asynUser *pasynUser, epicsInt32 *va
   return status;
 }
 /*
-	* @brief   Called when asyn clients call pasynInt32->write( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      Value to write
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynInt32->write( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      Value to write
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::writeInt32( asynUser *pasynUser, epicsInt32 value ) {
+asynStatus drvAsynIsegHalService::writeInt32( asynUser *pasynUser, epicsInt32 value ) {
 
   static const char *functionName = "writeInt32";
 
@@ -754,29 +758,28 @@ asynStatus drvAsynIseghalService::writeInt32( asynUser *pasynUser, epicsInt32 va
   return status;
 }
 /*
-	* @brief   Called when asyn clients call pasynOctect->read( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      addres of Value to read
-	* @param   [in]  maxChars   max number of char to read
-	* @param   [in]  actual     addres for actual number of char read
-	* @param   [in]  eomReason  address for eom 
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynOctect->read( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      addres of Value to read
+  * @param   [in]  maxChars   max number of char to read
+  * @param   [in]  actual     addres for actual number of char read
+  * @param   [in]  eomReason  address for eom
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::readOctet( asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason )
+asynStatus drvAsynIsegHalService::readOctet( asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason )
 {
 
   static const char *functionName = "readOctet";
 
-  epicsInt16 function = pasynUser->reason;
-  printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
-
   char octetValue[maxChars];
   IsegItem item = EmptyIsegItem;
   asynStatus status = asynSuccess;
+  epicsInt16 function = pasynUser->reason;
+  printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
 
   status = getIsegHalItem ( pasynUser, &item );
   if( status != asynSuccess ) return asynError;
@@ -802,18 +805,18 @@ asynStatus drvAsynIseghalService::readOctet( asynUser *pasynUser, char *value, s
 }
 
 /*
-	* @brief   Called when asyn clients call pasynOctect->write( ).
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  value      addres of value to write
-	* @param   [in]  maxChars   max number of char to write
-	* @param   [in]  actual     addres for actual number of char written
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @brief   Called when asyn clients call pasynOctect->write( ).
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  value      addres of value to write
+  * @param   [in]  maxChars   max number of char to write
+  * @param   [in]  actual     addres for actual number of char written
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::writeOctet( asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual )
+asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual )
 {
   static const char *functionName = "writeOctet";
 
@@ -865,8 +868,8 @@ asynStatus drvAsynIseghalService::writeOctet( asynUser *pasynUser, const char *v
   getTimeStamp( &timeStamp );
   pasynUser->timestamp = timeStamp;
 
-  pasynUser->alarmStatus = 0;
-  pasynUser->alarmSeverity = 0;
+  pasynUser->alarmStatus    = 0;
+  pasynUser->alarmSeverity  = 0;
   // update value of parameter
   status = ( asynStatus ) setStringParam( function, value );
   status = ( asynStatus ) callParamCallbacks( );
@@ -884,7 +887,7 @@ asynStatus drvAsynIseghalService::writeOctet( asynUser *pasynUser, const char *v
 }
 
 /*
-	* Userparam parsing method: skip separator
+  * Userparam parsing method: skip separator
 */
 static const char *skipSeparator( const char *pstart, int underscoreOk ){
     const char *p = pstart;
@@ -893,28 +896,28 @@ static const char *skipSeparator( const char *pstart, int underscoreOk ){
 }
 
 /*
-	* Userparam parsing method: Validate 'item' part of userparm string
+  * Userparam parsing method: Validate 'item' part of userparm string
 */
-int drvAsynIseghalService::isValidIsegHalItem( const char *item ) {
+int drvAsynIsegHalService::isValidIsegHalItem( const char *item ) {
   std::vector< std::string >::iterator it;
   it = std::find( isValidIsegHalItems.begin( ), isValidIsegHalItems.end( ), std::string( item ) );
   if( it != isValidIsegHalItems.end( ) ) return true;
   return false;
 }
 /*
-	* @Brief  User param follows this format: 'DTYPE'_'item'($( ADDR )) 
-	* where Type is INT, DBL, STR and DIG for UINT32DIGITAL
-  * The fully qualified name ( FQN ) for gettting/setting an isegHal item value 
-	* folow this format: ADDR.item, this is used to create port driver parameters.
-	*
-	* @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-	* @param   [in]  drvInfo    User param string
-	*
-	*  @return  in case of no error occured asynSuccess is returned. Otherwise
-	*           asynError or asynTimeout is returned. A error message is stored
-	*           in pasynUser->errorMessage.
+  * @Brief  User param follows this format: 'DTYPE'_'item'($( ADDR ))
+  *         where Type is INT, DBL, STR and DIG for UINT32DIGITAL
+  *         the fully qualified name ( FQN ) for gettting/setting an isegHal item value
+  *         folow this format: ADDR.item, this is used to create port driver parameters.
+  *
+  * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+  * @param   [in]  drvInfo    User param string
+  *
+  *  @return  in case of no error occured asynSuccess is returned. Otherwise
+  *           asynError or asynTimeout is returned. A error message is stored
+  *           in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize ) {
+asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize ) {
 
   static const char *functionName = "drvUserCreate";
 
@@ -928,9 +931,9 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
   char itemSubAddr[ITEM_TYPE_LEN];
   char iHalItem[ITEM_FQN_LEN];
   char iHalItemFQN[ITEM_FQN_LEN];
-	char iHalItemAddr[ITEM_ADDR_LEN];
+  char iHalItemAddr[ITEM_ADDR_LEN];
 
-	static bool firstPass = true;
+  static bool firstPass = true;
 
   if ( strlen( drvInfo ) > 4 /* && firstPass */ ) {
 
@@ -974,103 +977,102 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
 
     if( *p==':' ) {
 
-			if( ( strcmp( iHalItem, "Control" ) == 0 ) ) {
-				pnext = p;
-				p++; // skip this ':'
-				if( !isdigit( *p ) ){
-						epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-								"invalid userparam: Sub address must be - %s:digit's'", iHalItem );
-						return asynError;
-				}
+      if( ( strcmp( iHalItem, "Control" ) == 0 ) ) {
+        pnext = p;
+        p++; // skip this ':'
+        if( !isdigit( *p ) ){
+            epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+                "invalid userparam: Sub address must be - %s:digit's'", iHalItem );
+            return asynError;
+        }
 
-				for( len=0; *p && isdigit( *p ); len++, p++ ){}
-				strncpy( itemSubAddr, pnext, len+1 );
-				*( itemSubAddr+len+1 ) = 0;
-				strcat ( iHalItem, itemSubAddr );
-				prevLen+=len+1;
-			}
-			else {
-				epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-									"invalid userparam property: Must be 'Control:ADDR'" );
-				pasynUser->alarmStatus = 17;
-				pasynUser->alarmSeverity = 3;
-				return asynError;
-			}
-		}
+        for( len=0; *p && isdigit( *p ); len++, p++ ){}
+        strncpy( itemSubAddr, pnext, len+1 );
+        *( itemSubAddr+len+1 ) = 0;
+        strcat ( iHalItem, itemSubAddr );
+        prevLen+=len+1;
+      }
+      else {
+        epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+                  "invalid userparam property: Must be 'Control:ADDR'" );
+        pasynUser->alarmStatus = 17;
+        pasynUser->alarmSeverity = 3;
+        return asynError;
+      }
+    }
 
-		if ( *p=='[' ) {
-			pnext = p;
-			p++; // skip this '['
-			if( !isdigit( *p ) ){
-					epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-							"invalid userparam: Sub address must be - %s[digit's']", iHalItem );
-					return asynError;
-			}
+    if ( *p=='[' ) {
+      pnext = p;
+      p++; // skip this '['
+      if( !isdigit( *p ) ){
+          epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+              "invalid userparam: Sub address must be - %s[digit's']", iHalItem );
+          return asynError;
+      }
 
       for( len=0; *p && isdigit( *p ) && ( *p!=']' ); len++, p++ ){}
 
       strncpy( itemSubAddr, pnext, len+2 );
-			*( itemSubAddr+len+2 ) = 0;
+      *( itemSubAddr+len+2 ) = 0;
       prevLen+=len+2;
-			strcat ( iHalItem, itemSubAddr );
-			p++;
-		}
+      strcat ( iHalItem, itemSubAddr );
+      p++;
+    }
 
-		if ( *p =='(' ) {
+    if ( *p =='(' ) {
       p++;
       pnext = skipSeparator( p,0 );
-			// Empty bracket or non decimal first char not valid
-			if( !isdigit( *pnext ) ){
-					epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-							"invalid userparam: item address format is: - %s( digit's' )", iHalItem );
-					return asynError;
-			}
+      // Empty bracket or non decimal first char not valid
+      if( !isdigit( *pnext ) ){
+          epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+              "invalid userparam: item address format is: - %s( digit's' )", iHalItem );
+          return asynError;
+      }
 
-			/* To do: add aadress format validator
-			 * 				correct formats: digit / digit.digit / digit.digit.digit
-			*/
+      /* To do: add aadress format validator
+       *        correct formats: digit / digit.digit / digit.digit.digit
+      */
       for( len=0; *p && ( *p!=' ' ) && ( *p!=')' ); len++, p++ ){}
 
-			if( len > ITEM_ADDR_LEN ) {
-					epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
-							"invalid userparam: Wrong format for item '%s' address", iHalItem );
-					return asynError;
-			}
+      if( len > ITEM_ADDR_LEN ) {
+          epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
+              "invalid userparam: Wrong format for item '%s' address", iHalItem );
+          return asynError;
+      }
 
-			prevLen+=len+1;
-			strncpy( iHalItemAddr, pnext, len );
-			*( iHalItemAddr+len ) = 0;
-			epicsSnprintf( iHalItemFQN, prevLen+len, "%s.%s", iHalItemAddr, iHalItem );
-		} else {
+      prevLen+=len+1;
+      strncpy( iHalItemAddr, pnext, len );
+      *( iHalItemAddr+len ) = 0;
+      epicsSnprintf( iHalItemFQN, prevLen+len, "%s.%s", iHalItemAddr, iHalItem );
+    } else {
       //not a system item?
       if ( ( *p == 0 ) && ( strcmp( iHalItem, "Status" ) == 0
-					|| strcmp( iHalItem, "CrateNumber" ) == 0
-					|| strcmp( iHalItem, "BitRate" ) == 0
-					|| strcmp( iHalItem, "ModuleNumber" ) == 0
-					|| strcmp( iHalItem, "CycleCounter" ) == 0
-					|| strcmp( iHalItem, "Configuration" ) == 0
-					|| strcmp( iHalItem, "Read" ) == 0
-					|| strcmp( iHalItem, "Write" ) == 0
-					|| strcmp( iHalItem, "LogLevel" ) == 0
-					|| strcmp( iHalItem, "LogPath" ) == 0
-					|| strcmp( iHalItem, "LiveInsertion" ) == 0
-					|| strcmp( iHalItem, "SaveConfiguration" ) == 0
-					|| strcmp( iHalItem, "ServerVersion" ) == 0
-					|| strcmp( iHalItem, "NetworkTimeout" ) == 0
-					|| strcmp( iHalItem, "SessionName" ) == 0
-					|| strcmp( iHalItem, "ModuleList" ) == 0 ) )
-			{
+          || strcmp( iHalItem, "CrateNumber" ) == 0
+          || strcmp( iHalItem, "BitRate" ) == 0
+          || strcmp( iHalItem, "ModuleNumber" ) == 0
+          || strcmp( iHalItem, "CycleCounter" ) == 0
+          || strcmp( iHalItem, "Configuration" ) == 0
+          || strcmp( iHalItem, "Read" ) == 0
+          || strcmp( iHalItem, "Write" ) == 0
+          || strcmp( iHalItem, "LogLevel" ) == 0
+          || strcmp( iHalItem, "LogPath" ) == 0
+          || strcmp( iHalItem, "LiveInsertion" ) == 0
+          || strcmp( iHalItem, "SaveConfiguration" ) == 0
+          || strcmp( iHalItem, "ServerVersion" ) == 0
+          || strcmp( iHalItem, "NetworkTimeout" ) == 0
+          || strcmp( iHalItem, "SessionName" ) == 0
+          || strcmp( iHalItem, "ModuleList" ) == 0 ) )
+      {
         // Create fully qualified object for system items
         strcpy( iHalItemFQN, iHalItem );
       } else {
         epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
             "invalid userparam Must be TYPE _/ 'I'tem(ADDR)" );
-        pasynUser->alarmStatus		= 17;		// UDF
-        pasynUser->alarmSeverity	= 3;		// INVALID
+        pasynUser->alarmStatus    = 17;   // UDF
+        pasynUser->alarmSeverity  = 3;    // INVALID
         return asynError;
-			}
-
-		}
+      }
+    }
 
     int index;
 
@@ -1104,7 +1106,7 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
       printf( "\033[0;33m%s : ( %s ) : FQN : '%s' : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, iHalItemFQN, itemReason_ );
       itemReason_++;
     } else {
-			// we want the same reason to index the exisiting property name.
+      // we want the same reason to index the exisiting property name.
       pasynUser->reason = index;
     }
   }
@@ -1114,13 +1116,13 @@ asynStatus drvAsynIseghalService::drvUserCreate( asynUser *pasynUser, const char
 
 
 /*
-	* @brief       Connect driver to device
-	* @param [in]  pasynUser  pasynUser structure that encodes the reason and address.
-	* @return      in case of no error occured asynSuccess is returned. Otherwise
-	*              asynError or asynTimeout is returned. A error message is stored
-	*              in pasynUser->errorMessage.
+  * @brief       Connect driver to device
+  * @param [in]  pasynUser  pasynUser structure that encodes the reason and address.
+  * @return      in case of no error occured asynSuccess is returned. Otherwise
+  *              asynError or asynTimeout is returned. A error message is stored
+  *              in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::connect( asynUser *pasynUser ) {
+asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 
   printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
   if( !devConnect( session_, interface_ ) ) {
@@ -1129,23 +1131,23 @@ asynStatus drvAsynIseghalService::connect( asynUser *pasynUser ) {
     return asynError;
   }
 
-	/* Test that device is  responsive.
-		* iCSModel: iseg iCS based HV system controller model
-		* cc24: for crate systems
-		* icsmini2: system exposes the controller module model i.e MICC.
-	*/
+  /* Test that device is  responsive.
+    * iCSModel: iseg iCS based HV system controller model
+    * cc24: for crate systems
+    * icsmini2: system exposes the controller module model i.e MICC.
+  */
   char iCSModel[ITEM_FQN_LEN];
 
   if( strcmp( deviceModel_, "cc24" ) == 0 ) {
     strcpy( iCSModel, "0.1000.Article" );
   } else if ( strcmp( deviceModel_, "icsmini" ) == 0) {
-		strcpy( iCSModel, "0.0.Article" );
-	} else if ( strcmp( deviceModel_, "shr" ) == 0){
-		// Not comfirmed yet
-		strcpy( iCSModel, "0.0.Article" );
-	} else {
-		return asynError;
-	}
+    strcpy( iCSModel, "0.0.Article" );
+  } else if ( strcmp( deviceModel_, "shr" ) == 0){
+    // Not comfirmed yet
+    strcpy( iCSModel, "0.0.Article" );
+  } else {
+    return asynError;
+  }
 
   IsegItem model = iseg_getItem( session_, iCSModel );
   if( strcmp( model.quality, ISEG_ITEM_QUALITY_OK ) != 0 ) {
@@ -1171,7 +1173,7 @@ asynStatus drvAsynIseghalService::connect( asynUser *pasynUser ) {
 *              asynError or asynTimeout is returned. A error message is stored
 *              in pasynUser->errorMessage.
 */
-asynStatus drvAsynIseghalService::disconnect( asynUser *pasynUser ) {
+asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
 
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
              "%s: disconnect %s\n", session_, interface_ );
@@ -1184,23 +1186,23 @@ asynStatus drvAsynIseghalService::disconnect( asynUser *pasynUser ) {
       return asynError;
     }
   }
-
-  // if this call is not a shutdown exit, thus we lost connection to device
-  // iseghal will internally issues a reconnexion to the server. we need to listen to that
-  // inside our connect method called by autoconnect.
+  /*
+    * if this call is not a shutdown exit, thus we lost connection to device
+    * iseghal will internally issues a reconnexion to the server. we need to listen to that
+    * inside our connect method called by autoconnect.
+  */
   pasynManager->exceptionDisconnect( pasynUser );
   conMan_ = true;
   return asynSuccess;
-
 }
 
 /*
-	* @brief       Connect to isegHal device
-	* @param [in]  name  drvAsynIseghalService internal name of the interface handle.
-	* @param [in]  interface   name of the hardware interface.
-	* @return      true if interface is already connected or if successfully connected.
+  * @brief       Connect to isegHal device
+  * @param [in]  name  drvAsynIsegHalService internal name of the interface handle.
+  * @param [in]  interface   name of the hardware interface.
+  * @return      true if interface is already connected or if successfully connected.
 */
-int drvAsynIseghalService::devConnect( std::string const& name, std::string const& interface ) {
+int drvAsynIsegHalService::devConnect( std::string const& name, std::string const& interface ) {
 
   if ( devInitOk_ ) {
     if( iseg_isConnError( name.c_str( ) ) ) {
@@ -1231,11 +1233,11 @@ int drvAsynIseghalService::devConnect( std::string const& name, std::string cons
 }
 
 /*
-	* @brief       Disconnect from isegHal device
-	* @param [in]  name  drvAsynIseghalService internal name of the interface handle.
-	* @return      true if interface is already connected or if successfully connected.
+  * @brief       Disconnect from isegHal device
+  * @param [in]  name  drvAsynIsegHalService internal name of the interface handle.
+  * @return      true if interface is already connected or if successfully connected.
 */
-int drvAsynIseghalService::devDisconnect( std::string const& name ) {
+int drvAsynIsegHalService::devDisconnect( std::string const& name ) {
 
     int status = iseg_disconnect( name.c_str( ) );
     if ( status != ISEG_OK  ) return false;
@@ -1244,11 +1246,11 @@ int drvAsynIseghalService::devDisconnect( std::string const& name ) {
 }
 
 /*
-	* @brief       Check if a device is connected
-	* @param [in]  name  drvAsynIseghalService internal name of the interface handle.
-	* @return      true device is connected.
+  * @brief       Check if a device is connected
+  * @param [in]  name  drvAsynIsegHalService internal name of the interface handle.
+  * @return      true device is connected.
 */
-int drvAsynIseghalService::devConnected( std::string const& name ) {
+int drvAsynIsegHalService::devConnected( std::string const& name ) {
   std::vector< std::string >::iterator it;
   it = std::find( openedSessions.begin( ), openedSessions.end( ), name );
   // cant access hal object unless connect was successfully called
@@ -1256,12 +1258,12 @@ int drvAsynIseghalService::devConnected( std::string const& name ) {
   return ( it != openedSessions.end( ) && !iseg_isConnError( name.c_str( ) ) );
 }
 
-asynStandardInterfaces drvAsynIseghalService::getAsynStdIface( )
+asynStandardInterfaces drvAsynIsegHalService::getAsynStdIface( )
 {
   return asynStdInterfaces;
 }
 
-char *drvAsynIseghalService::getSessionName ( ){
+char *drvAsynIsegHalService::getSessionName ( ){
   return session_;
 }
 
@@ -1270,14 +1272,14 @@ extern "C" {
 
   /*
   * @brief   EPICS iocsh callable function to call constructor
-  *          for the drvAsynIseghalService class.
+  *          for the drvAsynIsegHalService class.
   *
   * @param  [in]  portName The name of the asyn port driver to be created.
   * @param  [in]  interface Addr for HAL-service running on a CC24 or iCSmini ( HAL protocol )
   * @param  [in]  mpod specify wether or not the system host wiener MPOD slaves.
   */
-  int drvAsynIseghalServiceConfig( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect ) {
-    new drvAsynIseghalService( portName, interface, icsCtrtype, autoConnect );
+  int drvAsynIsegHalServiceConfig( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect ) {
+    new drvAsynIsegHalService( portName, interface, icsCtrtype, autoConnect );
     return( asynSuccess );
   }
 
@@ -1286,10 +1288,10 @@ extern "C" {
   static const iocshArg initIseghalServiceArg2 = { "icsCtrtype",  iocshArgString };
   static const iocshArg initIseghalServiceArg3 = { "autoConnect", iocshArgInt };
   static const iocshArg * const initIseghalServiceArgs[] = { &initIseghalServiceArg0, &initIseghalServiceArg1, &initIseghalServiceArg2, &initIseghalServiceArg3 };
-  static const iocshFuncDef initIseghalServiceFuncDef = { "drvAsynIseghalServiceConfig", 4, initIseghalServiceArgs };
+  static const iocshFuncDef initIseghalServiceFuncDef = { "drvAsynIsegHalServiceConfig", 4, initIseghalServiceArgs };
 
   static void initIseghalServiceCallFunc( const iocshArgBuf *args ) {
-    drvAsynIseghalServiceConfig( args[0].sval, args[1].sval, args[2].sval, args[3].ival );
+    drvAsynIsegHalServiceConfig( args[0].sval, args[1].sval, args[2].sval, args[3].ival );
   }
 
   // iocsh function to set options for drv IsegHal Poller Thread
@@ -1298,49 +1300,51 @@ extern "C" {
   static const iocshArg * const setOptArgs[] = { &setOptArg0, &setOptArg1};
   static const iocshFuncDef setOptFuncDef = { "drvIsegHalPollerThreadSetOpt", 2, setOptArgs };
 
-	/*** iocsh callable function to set options for the polling thread
-	 * This function can be called from the iocsh via "drvIsegHalPollerThreadSetOpt( PORT, KEY, VALUE )"
-	 * \param[in] KEY is the name of the option and VALUE the new value for the option.
-	 * KEYs are:
-	 * Intervall - set the wait time after going through the list of records inside polling thread
-	 * debug     - Enable debug output of polling thread
-	*/
-	static void setOptCallFunc( const iocshArgBuf *args )
-	{
-		// Set new intervall for polling thread
-		if( strcmp( args[0].sval, "Intervall" ) == 0 ) {
-			double pollingFreq = 0.;
-			int n = sscanf( args[1].sval, "%lf", &pollingFreq );
-			if( 1 != n ) {
-					fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
-					return;
-			}
-				drvIsegHalPollerThread_->changeIntervall( pollingFreq );
-		}
+  /*
+  * @brief   iocsh callable function to set options for the polling thread
+  *          This function can be called from the iocsh via "drvIsegHalPollerThreadSetOpt( KEY, VALUE )".
+  *
+  * @param  [in]  KEY is the name of the option and VALUE the new value for the option.
+  * KEYs are:
+  *           Intervall - set the wait time after going through the list of records inside polling thread
+  *           debug     - Enable debug output of polling thread
+  */
+  static void setOptCallFunc( const iocshArgBuf *args )
+  {
+    // Set new intervall for polling thread
+    if( strcmp( args[0].sval, "Intervall" ) == 0 ) {
+      double pollingFreq = 0.;
+      int n = sscanf( args[1].sval, "%lf", &pollingFreq );
+      if( 1 != n ) {
+          fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
+          return;
+      }
+        drvIsegHalPollerThread_->changeIntervall( pollingFreq );
+    }
 
-		// Set new debug level
-		if( strcmp( args[0].sval, "debug" ) == 0 ) {
-			unsigned dbgLevel = 0;
-			int n = sscanf( args[1].sval, "%u", &dbgLevel );
-			if( 1 != n ) {
-				fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
-				return;
-			}
-			drvIsegHalPollerThread_->setDbgLvl( dbgLevel );
-		}
-	}
+    // Set new debug level
+    if( strcmp( args[0].sval, "debug" ) == 0 ) {
+      unsigned dbgLevel = 0;
+      int n = sscanf( args[1].sval, "%u", &dbgLevel );
+      if( 1 != n ) {
+        fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
+        return;
+      }
+      drvIsegHalPollerThread_->setDbgLvl( dbgLevel );
+    }
+  }
 
   /*
   * @brief   Register functions to EPICS
   */
-  void drvAsynIseghalServiceRegister( void ) {
-		static bool firstTime = true;
-		if ( firstTime ) {
+  void drvAsynIsegHalServiceRegister( void ) {
+    static bool firstTime = true;
+    if ( firstTime ) {
       iocshRegister( &initIseghalServiceFuncDef, initIseghalServiceCallFunc );
       iocshRegister( &setOptFuncDef, setOptCallFunc );
-			firstTime = false;
-		}
+      firstTime = false;
+    }
 
   }
-  epicsExportRegistrar( drvAsynIseghalServiceRegister );
+  epicsExportRegistrar( drvAsynIsegHalServiceRegister );
 }

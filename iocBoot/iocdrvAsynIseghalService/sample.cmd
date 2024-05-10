@@ -1,4 +1,4 @@
-#!../../bin/linux-x86_64/drvAsynIseghalServiceTest
+#!../../bin/linux-x86_64/drvAsynIsegHalServiceTest
 
 < envPaths
 
@@ -18,13 +18,13 @@ epicsEnvSet(ISEGSESSION, "ETHHAL")
 epicsEnvSet(ISEGIFACE, "$(HAL_SERVER):$(HAL_PORT)/$(IFACE),$(USER),$(PASSWORD)")
 
 #- Register all support components
-dbLoadDatabase "$(TOP)/dbd/drvAsynIseghalServiceTest.dbd"
-drvAsynIseghalServiceTest_registerRecordDeviceDriver pdbbase
+dbLoadDatabase "$(TOP)/dbd/drvAsynIsegHalServiceTest.dbd"
+drvAsynIsegHalServiceTest_registerRecordDeviceDriver pdbbase
 
 epicsEnvSet(iCSMODEL, "icsmini")
 epicsEnvSet(AUTOCNNECT, "1")
 #- Load ISEGHAL service driver
-drvAsynIseghalServiceConfig( "$(ISEGSESSION)", "$(ISEGIFACE)", "$(iCSMODEL)", $(AUTOCNNECT) )
+drvAsynIsegHalServiceConfig( "$(ISEGSESSION)", "$(ISEGIFACE)", "$(iCSMODEL)", $(AUTOCNNECT) )
 
 epicsThreadSleep(1)
 

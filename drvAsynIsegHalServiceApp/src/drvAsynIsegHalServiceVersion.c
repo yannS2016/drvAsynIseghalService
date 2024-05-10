@@ -10,12 +10,12 @@
 #include "devSup.h"
 #include "lsiRecord.h"
 
-#include "drvAsynIseghalServiceVersion.h"
+#include "drvAsynIsegHalServiceVersion.h"
 
 /* must be last include */
 #include "epicsExport.h"
 
-const char version[] = drvAsynIseghalServiceVERSION;
+const char version[] = drvAsynIsegHalServiceVERSION;
 
 static long read_string(lsiRecord *prec)
 {
@@ -32,7 +32,7 @@ static long read_string(lsiRecord *prec)
     return 0;
 }
 
-static lsidset drvAsynIseghalServiceVersion = {
+static lsidset drvAsynIsegHalServiceVersion = {
 	{5, NULL, NULL, NULL, NULL}, read_string
 };
-epicsExportAddress(dset,drvAsynIseghalServiceVersion);
+epicsExportAddress(dset,drvAsynIsegHalServiceVersion);

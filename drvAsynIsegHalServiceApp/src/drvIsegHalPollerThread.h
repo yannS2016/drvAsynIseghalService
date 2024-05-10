@@ -2,14 +2,14 @@
 // Copyright (C) 2014 Yann Stephen Mandza <yann.mandza@ess.se>
 //                    - European Spallation Source - ESS
 //
-// This file is part of drvAsynIseghalService
+// This file is part of drvAsynIsegHalService
 //
-// drvAsynIseghalService is free software; you can redistribute it and/or modify
+// drvAsynIsegHalService is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
 //
-// drvAsynIseghalService is distributed in the hope that it will be useful,
+// drvAsynIsegHalService is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
@@ -42,7 +42,7 @@ typedef struct {
 } intrUser_data_t;
 
 
-class drvAsynIseghalService;
+class drvAsynIsegHalService;
 
 /* @brief   thread monitoring set values from isegHAL
 *
@@ -52,7 +52,7 @@ class drvAsynIseghalService;
 */
 class drvIsegHalPollerThread: public epicsThreadRunable {
   public:
-    drvIsegHalPollerThread(drvAsynIseghalService *portD);
+    drvIsegHalPollerThread(drvAsynIsegHalService *portD);
     virtual ~drvIsegHalPollerThread();
     virtual void run();
     epicsThread thread;

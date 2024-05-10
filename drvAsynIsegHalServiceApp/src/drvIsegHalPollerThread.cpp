@@ -1,6 +1,6 @@
 /* drvIsegHalPollerThread.cpp
  *
- * Poller thread for drvAsynIseghalService Port Driver.
+ * Poller thread for drvAsynIsegHalService Port Driver.
  *
  * Yann Stephen Mandza
  * May 01, 2024
@@ -27,7 +27,7 @@
 
 // local includes
 #include "drvIsegHalPollerThread.h"
-#include "drvAsynIseghalService.h"
+#include "drvAsynIsegHalService.h"
 
 /* isegHAL includes */
 #include <isegclientapi.h>
@@ -35,7 +35,7 @@
 typedef std::list<asynUser *>::iterator intrUserItr;
 typedef std::list<intrUser_data_t *>::iterator intrUserDataItr;
 
-drvAsynIseghalService *drvAsynIseghalService_= NULL;
+drvAsynIsegHalService *drvAsynIsegHalService_= NULL;
 
 /* Called by epicsAtExit to shutdown iseghal session */
 static void drvIsegHalPollerThreadShutdown( void* pdrv)
@@ -60,10 +60,10 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 
   printf("\033[0;36m%s:(%s) Reason '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason );
 
-	if(drvAsynIseghalService_)
-		drvAsynIseghalService_->lock();
-		status = drvAsynIseghalService_->getIsegHalItem(pasynUser, &item);
-		drvAsynIseghalService_->unlock();
+	if(drvAsynIsegHalService_)
+		drvAsynIsegHalService_->lock();
+		status = drvAsynIsegHalService_->getIsegHalItem(pasynUser, &item);
+		drvAsynIsegHalService_->unlock();
 
 	if(status == asynSuccess) {
 		pasynUser->alarmStatus 		= 0;
@@ -113,14 +113,14 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 /*
  * @brief  C'tor of drvIsegHalPollerThread
 */
-drvIsegHalPollerThread::drvIsegHalPollerThread(drvAsynIseghalService *portD)
+drvIsegHalPollerThread::drvIsegHalPollerThread(drvAsynIsegHalService *portD)
   : thread( *this, "drvIsegHalPollerThread", epicsThreadGetStackSize( epicsThreadStackSmall ), 50 ),
     _run( true ),
     _pause(2.),
     _debug(0)
 {
   if(!portD) return;
-  drvAsynIseghalService_ = portD;
+  drvAsynIsegHalService_ = portD;
   _pasynIntrUser.clear();
   epicsAtExit(drvIsegHalPollerThreadShutdown, (void*)this);
   printf("\033[0;36m%s:(%s) : Initialization completed \n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
@@ -145,7 +145,7 @@ drvIsegHalPollerThread::~drvIsegHalPollerThread()
 
  _pasynIntrUser.clear();
  _intrUser_data_gbg.clear();
- drvAsynIseghalService_ = NULL;
+ drvAsynIsegHalService_ = NULL;
 
  printf("\033[0;36m%s:%s Poller thread cleaning up completed!\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
 
@@ -159,7 +159,7 @@ void drvIsegHalPollerThread::run()
   asynUser *pasynUser;
 
   // See if there are any asynUInt32Digital callbacks registered to be called
-  pasynManager->interruptStart(drvAsynIseghalService_->getAsynStdIface().uInt32DigitalInterruptPvt, &pclientList);
+  pasynManager->interruptStart(drvAsynIsegHalService_->getAsynStdIface().uInt32DigitalInterruptPvt, &pclientList);
   pnode = (interruptNode *)ellFirst(pclientList);
   asynUInt32DigitalInterrupt *pUInt32D;
   while (pnode) {
@@ -179,10 +179,10 @@ void drvIsegHalPollerThread::run()
     _intrUser_data_gbg.unique();
     pnode = (interruptNode *)ellNext(&pnode->node);
   }
-  pasynManager->interruptEnd(drvAsynIseghalService_->getAsynStdIface().uInt32DigitalInterruptPvt);
+  pasynManager->interruptEnd(drvAsynIsegHalService_->getAsynStdIface().uInt32DigitalInterruptPvt);
 
   // See if there are any asynInt32 callbacks registered to be called.
-  pasynManager->interruptStart(drvAsynIseghalService_->getAsynStdIface().int32InterruptPvt, &pclientList);
+  pasynManager->interruptStart(drvAsynIsegHalService_->getAsynStdIface().int32InterruptPvt, &pclientList);
   pnode = (interruptNode *)ellFirst(pclientList);
   asynInt32Interrupt *pInt32;
   while (pnode) {
@@ -203,10 +203,10 @@ void drvIsegHalPollerThread::run()
     _intrUser_data_gbg.unique();
     pnode = (interruptNode *)ellNext(&pnode->node);
   }
-  pasynManager->interruptEnd(drvAsynIseghalService_->getAsynStdIface().int32InterruptPvt);
+  pasynManager->interruptEnd(drvAsynIsegHalService_->getAsynStdIface().int32InterruptPvt);
 
   // See if there are any asynFloat64 callbacks registered to be called.
-  pasynManager->interruptStart(drvAsynIseghalService_->getAsynStdIface().float64InterruptPvt, &pclientList);
+  pasynManager->interruptStart(drvAsynIsegHalService_->getAsynStdIface().float64InterruptPvt, &pclientList);
   pnode = (interruptNode *)ellFirst(pclientList);
   asynFloat64Interrupt *pFloat64;
 
@@ -227,7 +227,7 @@ void drvIsegHalPollerThread::run()
     _intrUser_data_gbg.unique();
     pnode = (interruptNode *)ellNext(&pnode->node);
   }
-  pasynManager->interruptEnd(drvAsynIseghalService_->getAsynStdIface().float64InterruptPvt);
+  pasynManager->interruptEnd(drvAsynIsegHalService_->getAsynStdIface().float64InterruptPvt);
 
   while(true) {
 
