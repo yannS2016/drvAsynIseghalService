@@ -11,7 +11,7 @@ DB += can-items.template
 DB += crate-items.template
 DB += module-items.template
 DB += channel-items.template
-DB += test.template
+
 # If <anyname>.db template is not named <anyname>*.template add
 # <anyname>_TEMPLATE = <templatename>
 
