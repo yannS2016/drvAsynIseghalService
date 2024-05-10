@@ -64,8 +64,9 @@ class drvIsegHalPollerThread: public epicsThreadRunable {
     virtual void run();
     epicsThread thread;
 
-    inline void changeIntervall( double val ) { _pause = val; }
-    inline double getIntervall(){ return _pause; }
+    inline void changeInterval( double val ) { _pause = val; }
+		inline void changeqRequestInterval( double val ) { _qRequestInterval = val; }
+    inline double getInterval(){ return _pause; }
 
     inline void setDbgLvl( int dbglvl ) { _debug = dbglvl; }
     inline void disable() { _run = false; }
@@ -75,6 +76,7 @@ class drvIsegHalPollerThread: public epicsThreadRunable {
   private:
     bool _run;
     double _pause;
+    double _qRequestInterval;
     unsigned _debug;
     std::list<asynUser *> _pasynIntrUser;
     std::list<intrUser_data_t *> _intrUser_data_gbg;
