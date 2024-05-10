@@ -277,7 +277,7 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
   asynStatus status = asynSuccess;
   epicsInt16 function = isegHalUser->reason;
 
-  printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
+  //printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
 
   if( !initStatus ) return asynError;
 
@@ -296,7 +296,7 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
   if( !devConnected( session_ ) ) {
     if( devInitOk_ && !conMan_ ) {
       this->disconnect( isegHalUser );
-      drvIsegHalPollerThread_->changeIntervall( 10.0 );
+      drvIsegHalPollerThread_->changeInterval( 10.0 );
     }
     isegHalUser->alarmStatus    = 1;
     isegHalUser->alarmSeverity  = 3;
@@ -1213,7 +1213,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
         IsegResult status = iseg_reconnect( name.c_str( ), interface.c_str( ) );
         if ( ISEG_OK != status ) return false;
         conMan_ = 0;
-        drvIsegHalPollerThread_->changeIntervall( 2.0 );
+        drvIsegHalPollerThread_->changeInterval( 2.0 );
     }
   }
   else {
@@ -1306,24 +1306,34 @@ extern "C" {
   *
   * @param  [in]  KEY is the name of the option and VALUE the new value for the option.
   * KEYs are:
-  *           Intervall - set the wait time after going through the list of records inside polling thread
+  *           Interval - set the wait time after going through the list of records inside polling thread
   *           debug     - Enable debug output of polling thread
   */
   static void setOptCallFunc( const iocshArgBuf *args )
   {
     // Set new intervall for polling thread
-    if( strcmp( args[0].sval, "Intervall" ) == 0 ) {
+    if( strcmp( args[0].sval, "Interval" ) == 0 ) {
       double pollingFreq = 0.;
       int n = sscanf( args[1].sval, "%lf", &pollingFreq );
       if( 1 != n ) {
           fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
           return;
       }
-        drvIsegHalPollerThread_->changeIntervall( pollingFreq );
+        drvIsegHalPollerThread_->changeInterval( pollingFreq );
+    }
+
+    if( strcmp( args[0].sval, "RequestInterval" ) == 0 ) {
+      double qRequestInterval = 0.;
+      int n = sscanf( args[1].sval, "%lf", &qRequestInterval );
+      if( 1 != n ) {
+          fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
+          return;
+      }
+        drvIsegHalPollerThread_->changeqRequestInterval( qRequestInterval );
     }
 
     // Set new debug level
-    if( strcmp( args[0].sval, "debug" ) == 0 ) {
+    if( strcmp( args[0].sval, "Debug" ) == 0 ) {
       unsigned dbgLevel = 0;
       int n = sscanf( args[1].sval, "%u", &dbgLevel );
       if( 1 != n ) {
