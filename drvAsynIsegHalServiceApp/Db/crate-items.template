@@ -99,7 +99,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Supply3V3" ) {
 }
 
 record( ai, "$(P)$(R):CRATE$(ID=1000)-Bat24V" ) {
-    field(DESC, "Battery + 24V")
+    field(DESC, "Battery +24V")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[8]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
