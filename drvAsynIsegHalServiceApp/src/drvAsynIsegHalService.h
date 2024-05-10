@@ -2,14 +2,14 @@
 // Copyright (C) 2014 Yann Stephen Mandza <yann.mandza@ess.se>
 //                    - European Spallation Source - ESS
 //
-// This file is part of drvAsynIseghalService
+// This file is part of drvAsynIsegHalService
 //
-// drvAsynIseghalService is free software; you can redistribute it and/or modify
+// drvAsynIsegHalService is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
 //
-// drvAsynIseghalService is distributed in the hope that it will be useful,
+// drvAsynIsegHalService is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
@@ -50,9 +50,9 @@
   * or iCSmini controller ( ECHxx crate with MMS & MMC slots). These compatible HV-modules (EBS, EDS, EHS, ESS,NHS, NHQ, HPS, FPS, SHQ ) are also supported.
   *
 */
-class drvAsynIseghalService : public asynPortDriver {
+class drvAsynIsegHalService : public asynPortDriver {
   public:
-    drvAsynIseghalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
+    drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect );
     // These are the methods that we override from asynPortDriver
     virtual asynStatus readUInt32Digital( asynUser *pasynUser, epicsUInt32 *value, epicsUInt32 mask );
     virtual asynStatus writeUInt32Digital( asynUser *pasynUser, epicsUInt32 value, epicsUInt32 mask );
@@ -66,49 +66,27 @@ class drvAsynIseghalService : public asynPortDriver {
     virtual asynStatus connect(asynUser *pasynUser);
     virtual asynStatus disconnect(asynUser *pasynUser);
 
-		asynStatus getIsegHalItem (asynUser *isegHalUser, IsegItem *item);
-
     int devConnect( std::string const& name, std::string const& interface );
     int devConnected( std::string const& name );
     int devDisconnect( std::string const& name );
-    int hasIsegHalItem (const char *item);
-    char *getSessionName ();
+		char *getSessionName ();
+    int isValidIsegHalItem (const char *item);
     asynStandardInterfaces getAsynStdIface();
+		asynStatus getIsegHalItem (asynUser *isegHalUser, IsegItem *item);
 
-		void conManager(std::string const& name);
-    void iseghalPollerTask(void);
     bool iseghalExiting_;
     asynUser *exitUser_;
 
   protected:
-    // Values used for pasynUser->reason, and indexes into the parameter library.
-    // system items are not CAN address dependant.
-    int P_SysStatus;      //index for Parameter "SystemStatus"
-    int P_SysCrtNum;      //index for Parameter "SystemCrateNumber"
-    int P_SysCrtList;     //index for Parameter "SystemCrateList"
-    int P_SysModNum;      //index for Parameter "SystemModuleNumber"
-    int P_SysCCtr;        //index for Parameter "CycleCounter"
-    int P_SysLogL;        //index for Parameter "SystemLogLevel"
-    int P_SysLogPath;     //index for Parameter "LogPath"
-    int P_SysLinMode;     //index for Parameter "LiveInsertionMode"
-    int P_SysSConfig;     //index for Parameter "SaveConfiguration"
-    int P_SysEthName;     //index for Parameter "EthName"
-    int P_SysEthAddr;     //index for Parameter "EthAddress"
-    int P_SysSVers;       //index for Parameter "ServerVersion"
-    int P_SysNetTout;     //index for Parameter "NetworkTimeout"
-    int P_SysSSname;      //index for Parameter "SessionName"
-
-    int iseghalItems[NITEMS];
 
   private:
-
     char  *session_;
     char  *interface_;
     char  *deviceModel_;
     int   itemReason_;
 		bool  devInitOk_;
 		bool  conMan_;
-		int   iseghalReconAttempt_;
+		int   reconAttempt_;
     std::vector< std::string > openedSessions;
     std::map<epicsUInt32, std::string> isegHalItemsLookup;
 };

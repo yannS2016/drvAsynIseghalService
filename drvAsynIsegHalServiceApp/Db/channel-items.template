@@ -45,6 +45,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentBounds") {
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageNominal") {
+    field(PINI, "RUNNING")
     field(DESC, "HV channel nominal volatge")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageNominal($(LINEADDRCHAN=0.0.0))")
@@ -52,9 +53,10 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageNominal") {
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentNominal") {
+    field(PINI, "RUNNING")
     field(DESC, "HV Channel Nominal current")
     field(DTYP, "asynFloat64")
-    field(INP,  "@asyn($(PORT))DBL_VoltageNominal($(LINEADDRCHAN=0.0.0))")
+    field(INP,  "@asyn($(PORT))DBL_CurrentNominal($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
