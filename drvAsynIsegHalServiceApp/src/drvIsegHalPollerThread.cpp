@@ -47,7 +47,7 @@ static void drvIsegHalPollerThreadShutdown( void* pdrv)
 }
 
 /*
-  * @brief   Interrupt Users callback for Clean device access in port driver 
+  * @brief   Interrupt Users callback for Clean device access in port driver
   *          each registered Interrupt as a duplicate asynuser  thats registered this callback for device
 	*          access within the port thread: this feature is used because the device handle does not allow
 	*          access to the Qt SSL socket outside the creating thread, aka. Asyn Port Thread.
@@ -167,7 +167,7 @@ drvIsegHalPollerThread::~drvIsegHalPollerThread()
 }
 
 /*
-  * @brief   Poller thread runtime method 
+  * @brief   Poller thread runtime method
   *
 	* When this poller object is instantiated in the drvAsynIsegHalService instance after the IOC gets in running state
 	* We build a local list of duplicate interrupt users by registering a special callback for each.
