@@ -1,38 +1,60 @@
-# EPICS Asyn Client for iseg Hardware Abstraction Layer
-Asyn-based device support for Iseg HV PS via iseghal service library
+# EPICS Asyn PortDriver Client for ISEG Hardware Abstraction Layer
+Asyn-based device support for Iseg iCS-based HV/LV control systems using the isegHAL service library.
 
 ## Introduction
-The isegHAL library offers a string based application interface - API. The data
-collection from the iseg high voltage modules is done in the background. All
-communication handshake is handled by the isegHAL.
+EPICS Asyn Driver for ISEG HV/LV PS systems based on the unified ISEG control platform 'iCS' capable systems i.e iCSmini 2, CC24, and SHR(not tested yet) controllers
+offering control and monitoring of ISEG high voltage through different communication interfaces. The driver uses the isegHAL services library providing a string-based TCP/IP application interface - API  based on a Qt SSL Socket using OpenSSL. Data collection from the ISEG HV/LV modules is done on request or from a background task piping access request to the port driver. All communication handshake is handled by the isegHAL service library patched to provide some level of connexion handshaking management.
 
-drvAsynIseghalService offers EPICS device support routines to use the isegHAL library
-within your EPICS applications.
+More info : [isegHAL](https://iseg-hv.com/download/SOFTWARE/iCS/doc/isegHAL)
 
-## Build
-Set paths to `EPICS_BASE` and `ISEGHAL` in `configure/RELEASE.local`.
-The header files from isegHAL are searched in `$ISEGHAL` and `$ISEGHAL/include`,
-the shared object files in `$ISEGHAL` and `$ISEGHAL/lib`.
+## Supported iCS Systems
+-  ICS  MINI 2 Ethernet/Wifi Box for CAN/Serial Connected HV devices
+-  CC24 controller module for use with MMS/MPOD compatible ECH crate series and modules
+-  SHR  switchable high-end high precision ac/dc desktop hv source-measure-unit
 
-If the variable `CHECK_TIMESTAMPS` is defined in `configure/RELEASE.local`
-the device support will check if the isegHAL has updated the corresponding value
-within the last 30 seconds. If not the record is set to a TIMEOUT_ALARM.
+More info: [ICS](https://iseg-hv.com/ics/)
+## Dependencies
 
-### Cross compiling
-If you want to cross-compile the devIsegHal module, the `ISEGHAL` variable should
-not be defined in `configure/RELEASE.local`. Instead, only define `EPICS_BASE` in
-this file. `ISEGHAL` should be defined in `configure/RELEASE.Common.{T_A}` where
-`{T_A}` stands for the target architecture (e.g. linux-arm).
+-  [EPICS base 7.0.7 or later](http://www.aps.anl.gov/epics/)
+-  [AsynDriver 4-42 or later](http://www.aps.anl.gov/epics/modules/soft/asyn/)
+-  [isegHAL  version 1.9.0 or later](https://iseg-hv.com/download/?dir=SOFTWARE/isegHAL)
 
-## Supported Record Types
+## Build & Install
+ 1.  Edit 'configure/RELEASE.local' and change the paths to ASYN and EPICS_BASE
+ 2.  Edit 'configure/RELEASE.local' and set the TOP path for ISEGHAL header and library.
+ 3.  Type `make install` to compile the package.
+    
+Note:
+-  isegHAL Service header files are searched in `$ISEGHAL` and `$ISEGHAL/include`, and the shared object files in `$ISEGHAL` and `$ISEGHAL/lib`.
 
-| Record type                | isegDataType |
-| -------------------------- |:------------:|
-| ai/ao records              | R4           |
-| bi/bo records              | BOOL         |
-| mbbiDirect records         | UI1 & UI4    |
-| longin/longout records     | UI1 & UI4    |
-| stringin/stringout records | STR          |
+-  If the variable `CHECK_TIMESTAMPS` is defined in `configure/RELEASE.local` the driver will check if the isegHAL has updated the corresponding value within the last 30 seconds. If not the record is set to a TIMEOUT_ALARM (this feature is not yet implemented)
 
-*Note: the maximum string length for stringin/out records is limited to 40 characters while the maximal length for the value of an IsegItemValue is 200.
-Thus only the first 39 characters of the IsegItemValue are copied to record's VAL field (plus Null-Character for string termination).*
+## Usage
+To load the driver use the command inside the IOC
+```
+drvAsynIsegHalServiceConfig( "ISEGHALSESSION", "ISEGHALIFACE", "iCSMODEL", AUTOCNNECT=1 )
+```
+where `ISEGHALSESSION` is the name used by Asyn to identify the driver and the isegHAL connection,
+`ISEGHALIFACE` INTERFACE is the actual name of the hardware interface used by the iCS system (e.g. "can0" for a CAN interface)
+`iCSMODEL` refers to the ICS control system devices the driver connects to, i.e ICSMINI2, CC24 or SHR
+and `autoConnect` is a flag that whether the driver should automatically connect to the device must be set to 1.
+
+## Records
+EPICS records using `drvAsynIsegHalService`, set its `DTYP` field to one of the supported Asyn interfaces registered by the driver. The driver provides an asynUINT32Digital interface for read/writing Status related isegHal items. asynInt32, aysnFloat64, and asynOctet interfaces are provided for reading other isegHAL items data types. Nonetheless, status-related items can be accessed using the asynInt32 interface too. 
+
+This driver provides generic access to the supported iCS control systems devices. That is, device address access for the related isegHAL item is done via predefined port  driver user parameters. Instead, This is done at the record level and inside the driver using the `asynDrvUser` interface. The Database records INP and OUT links follow this format: `@asyn($(PORT))TYPE_ValidItem($(ADDR=0.1000)). `
+
+Here `TYPE` is `INT, DBL, DIG or STR`. `ValidItem` is a valid isegHAL items. And `ADDR` is the item's address within the connected CAN system. 
+The `TYPE_ValidItem($(ADDR=0.1000)) ` drvInfo string is parsed to build the fully qualified name, FQN for the isegHAL item, i.e `0.1000.ValidItem` associated with the correct port driver registered interface for its `TYPE`.
+
+isegHAL provides its timestamp for the last time a value was changed (timeStampLastChanged). To use it as the record's timestamp, the TSE field has to be set to -2.
+
+```
+record( ai, "$(P)$(R):CRATE$(ID=1000)-FanSpeed") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_FanSpeed($(LINEADDR=0.1000))")
+    field(TSE,  "-2")
+}
+```
+*Note: the maximum string length for stringin/out records is limited to 40 characters while the maximum length for the value of an IsegItemValue is 200.
+Thus only the first 39 characters of the IsegItemValue are copied to the record's VAL field (plus Null-Character for string termination).*
