@@ -29,7 +29,11 @@
 #include <list>
 #include <epicsThread.h>
 
+#define READ_BUF_LEN   40
+#define ISEG_ITEM_VALUE_MAX_LEN 200
+
 typedef enum {
+
   UINT32DIGITALTYPE = 0,
   FLOAT64TYPE = 1,
   INT32TYPE = 2,
@@ -37,8 +41,11 @@ typedef enum {
 } drvIsegHalPoller_uflags_t;
 
 typedef struct {
+
   drvIsegHalPoller_uflags_t uflags;
   void *intrHandle;
+	char prevItemVal[READ_BUF_LEN];
+
 } intrUser_data_t;
 
 
