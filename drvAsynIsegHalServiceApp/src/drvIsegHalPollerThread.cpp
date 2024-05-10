@@ -62,7 +62,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 
   intrUser_data_t *intrUser = (intrUser_data_t *)pasynUser->userData;
   drvIsegHalPoller_uflags_t ifaceType = (drvIsegHalPoller_uflags_t)intrUser->uflags;
-
+	char *prevItemVal = (char *)intrUser->prevItemVal;
 	epicsUInt16 mask;
   IsegItem item = EmptyIsegItem;
 	asynStatus status = asynSuccess;
@@ -84,35 +84,41 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 		case FLOAT64TYPE:
 			{
 				asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
-				epicsFloat64 float64Value;
-				float64Value = (epicsFloat64)strtod (item.value, NULL);
-				if(status != asynSuccess) float64Value = NAN;
-				printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
-				pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
+				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+					epicsFloat64 float64Value;
+					float64Value = (epicsFloat64)strtod (item.value, NULL);
+					if(status != asynSuccess) float64Value = NAN;
+					printf("\033[0;36m%s:(%s) item value %s converted %lf\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,float64Value);
+					pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
+				}
 				break;
 			}
 
 		case UINT32DIGITALTYPE:
 			{
 				asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
-				epicsUInt32 uInt32Value;
-				uInt32Value =  (epicsUInt32)atoi(item.value) ;
-				mask = pUInt32D->mask;
-				if (mask != 0 ) uInt32Value &= mask;
-				if(status != asynSuccess) uInt32Value = NAN;
-				printf("\033[0;36m%s : (%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value, uInt32Value );
-				pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
+				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+					epicsUInt32 uInt32Value;
+					uInt32Value =  (epicsUInt32)atoi(item.value) ;
+					mask = pUInt32D->mask;
+					if (mask != 0 ) uInt32Value &= mask;
+					if(status != asynSuccess) uInt32Value = NAN;
+					printf("\033[0;36m%s : (%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value, uInt32Value );
+					pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
+				}
 				break;
 			}
 
 		case INT32TYPE:
 			{
 				asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
-				epicsInt32 int32Value;
-				int32Value = (epicsInt32)atoi(item.value);
-				if(status != asynSuccess) int32Value = NAN;
-				printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
-				pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
+				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+					epicsInt32 int32Value;
+					int32Value = (epicsInt32)atoi(item.value);
+					if(status != asynSuccess) int32Value = NAN;
+					printf("\033[0;36m%s:(%s) item value %s converted %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, item.value,int32Value );
+					pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
+				}
 				break;
 			}
 
@@ -120,9 +126,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 				asynPrint(pasynUser, ASYN_TRACE_ERROR,
           "%s Undefined Interface\n",functionName);
 				break;
-
 	}
-
+	// store intUser prev value.
+	strcpy(prevItemVal, item.value);
 }
 
 /*
@@ -192,6 +198,7 @@ void drvIsegHalPollerThread::run()
     pasynUser->reason = pUInt32D->pasynUser->reason;
     _intrUser->uflags = UINT32DIGITALTYPE;
     _intrUser->intrHandle = (void*)pUInt32D;
+		_intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
     _pasynIntrUser.push_back(pasynUser);
     _intrUser_data_gbg.push_back(_intrUser);
@@ -216,6 +223,7 @@ void drvIsegHalPollerThread::run()
     pasynUser->reason = pInt32->pasynUser->reason;
     _intrUser->uflags = INT32TYPE;
     _intrUser->intrHandle = (void*)pInt32;
+		_intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
     _pasynIntrUser.push_back(pasynUser);
     _intrUser_data_gbg.push_back(_intrUser);
@@ -242,6 +250,7 @@ void drvIsegHalPollerThread::run()
     pasynUser->reason = pFloat64->pasynUser->reason;
     _intrUser->uflags = FLOAT64TYPE;
     _intrUser->intrHandle = (void*)pFloat64;
+		_intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
     _pasynIntrUser.push_back(pasynUser);
     _intrUser_data_gbg.push_back(_intrUser);
