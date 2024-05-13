@@ -1,0 +1,233 @@
+diff --git isegHalRemoteClient/iseghalremote.cpp isegHalRemoteClient/iseghalremote.cpp
+index 8c68520..e03d1a1 100644
+--- isegHalRemoteClient/iseghalremote.cpp
++++ isegHalRemoteClient/iseghalremote.cpp
+@@ -30,6 +30,8 @@
+ #include <QCoreApplication>
+ #include <QSslSocket>
+ 
++#include <QNetworkProxyFactory>
++
+ int IsegHalRemote::m_timeout = IsegHalRemote::DefaultNetworkTimeout;
+ 
+ // Workaround for QTBUG-53798
+@@ -43,11 +45,109 @@ IsegHalRemote::IsegHalRemote(QObject *parent) :
+ 	m_socket = new QSslSocket(this);
+ 	m_socket->setProtocol(QSecureSslProtocols);
+ 	m_socket->setPeerVerifyMode(QSslSocket::VerifyNone);
++	m_socket->setProxy(QNetworkProxy::NoProxy);
++
++	QObject::connect(m_socket, &QAbstractSocket::connected, this, &IsegHalRemote::onConnected);
++	QObject::connect(m_socket, &QAbstractSocket::disconnected, this, &IsegHalRemote::onDisconnected);
++	QObject::connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &IsegHalRemote::onErr);
++	QObject::connect(m_socket, &QAbstractSocket::stateChanged, this, &IsegHalRemote::onStateChanged);
+ 
++	connected = false;
++	conError = false;
+ 	if (!QCoreApplication::instance())
+ 		new QCoreApplication(g_argc, g_argv);
+ }
+ 
++void IsegHalRemote::onConnected()
++{
++  qInfo() << "("<<__FUNCTION__ <<") " <<  "\033[0;32mSOCKET CONNECTED\033[0m";
++  connected = true;
++  conError = false;
++}
++
++//(onErr) Error occured
++//(onStateChanged) Socket state: ClosingState
++//(onStateChanged) Socket state: UnconnectedState
++//(onDisconnected)  Disconnected!
++
++void IsegHalRemote::onDisconnected()
++{
++  qInfo() << "("<<__FUNCTION__ <<") " <<  "\033[0;32mSOCKET DISCONNECTED\033[0m";
++  connected = false;
++
++}
++
++void IsegHalRemote::onErr(QAbstractSocket::SocketError error)
++{
++
++  qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR OCCURED\033[0m";
++  switch (error)
++  {
++    case QAbstractSocket::AddressInUseError:
++        qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Address is already in use\033[0m";
++        break;
++    case QAbstractSocket::ConnectionRefusedError:
++        qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Connection refused\033[0m" ;
++        break;
++    case QAbstractSocket::HostNotFoundError:
++        qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Host not found\033[0m" ;
++        break;
++    case QAbstractSocket::RemoteHostClosedError:
++        qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET ERROR: Remote host closed\033[0m" ;
++        break;
++    default:
++        break;
++  }
++
++  conError = true;
++  m_socket->disconnectFromHost();
++}
++
++void IsegHalRemote::onStateChanged(QAbstractSocket::SocketState socketState)
++{
++  QString stateTostr("");
++  switch (socketState)
++  {
++  case QAbstractSocket::UnconnectedState:
++      stateTostr =  "UnconnectedState";
++     break;
++  case QAbstractSocket::HostLookupState:
++      stateTostr =  "HostLookupState";
++      break;
++  case QAbstractSocket::ConnectingState:
++       stateTostr =  "ConnectingState";
++      break;
++  case QAbstractSocket::ConnectedState:
++       stateTostr =  "ConnectedState";
++      break;
++  case QAbstractSocket::BoundState:
++       stateTostr =  "BoundState";
++      break;
++  case QAbstractSocket::ClosingState:
++       stateTostr =  "ClosingState";
++      break;
++  case QAbstractSocket::ListeningState:
++       stateTostr =  "ListeningState";
++      break;
++  }
++  qInfo() <<"("<<__FUNCTION__ <<") "<< "\033[0;32mSOCKET STATE: " << stateTostr << "\033[0m";
++}
++
++// if not error and not connected then call connect: not connected
++// at this stage error is false and connect is true: connected
++// if error is true and connect is false: not connected
++bool IsegHalRemote::isConnected()
++{
++  QCoreApplication::instance()->processEvents();
++  return connected;
++}
++
++bool IsegHalRemote::isConnError()
++{
++  QCoreApplication::instance()->processEvents();
++  return conError;
++}
++
+ bool IsegHalRemote::connectToHostEncrypted(const QString &host, quint16 port)
+ {
+ 	m_socket->connectToHostEncrypted(host, port);
+diff --git isegHalRemoteClient/iseghalremote.h isegHalRemoteClient/iseghalremote.h
+index 60f6180..03202ea 100644
+--- isegHalRemoteClient/iseghalremote.h
++++ isegHalRemoteClient/iseghalremote.h
+@@ -30,6 +30,7 @@
+ #include "iseghalremoteclientglobal.h"
+ 
+ #include <QObject>
++#include <QAbstractSocket>
+ 
+ class QSslSocket;
+ 
+@@ -57,6 +58,15 @@ public:
+ 	static void setTimeout(int milliSeconds);
+ 	static bool supportsSsl();
+ 
++  bool isConnected();
++  bool isConnError();
++
++public slots:
++  void onConnected();
++  void onDisconnected();
++  void onErr(QAbstractSocket::SocketError error);
++  void onStateChanged(QAbstractSocket::SocketState socketState);
++
+ private:
+ 	bool connectToHostEncrypted(const QString &host, quint16 port);
+ 	QByteArray writeReadSynchronous(const QByteArray &data) const;
+@@ -65,6 +75,9 @@ private:
+ 	static int m_timeout;
+ 	QByteArray m_session;
+ 	QSslSocket *m_socket;
++
++  bool connected;
++  bool conError;
+ };
+ 
+ #endif // ISEGHALREMOTE_H
+diff --git isegHalRemoteClient/isegremoteapi.cpp isegHalRemoteClient/isegremoteapi.cpp
+index 64f6458..7bb5de4 100644
+--- isegHalRemoteClient/isegremoteapi.cpp
++++ isegHalRemoteClient/isegremoteapi.cpp
+@@ -30,6 +30,7 @@
+ #include <QHash>
+ #include <QMutex>
+ #include <QObject>
++#include <QSslSocket>
+ 
+ #include <stdlib.h>
+ 
+@@ -63,10 +64,14 @@ IsegResult iseg_connect(const char *name, const char *interface, void *reserved)
+ {
+ 	Q_UNUSED(reserved);
+ 
++  qInfo() << "System SSL Support " << QSslSocket::supportsSsl()
++         << QSslSocket::sslLibraryBuildVersionString() << QSslSocket::sslLibraryVersionString();
++
+ 	if (isKeyValid(name))
+ 		return ISEG_WRONG_SESSION_NAME;
+ 
+ 	IsegHalRemote *hal = new IsegHalRemote();
++  qInfo() <<"HAL socket instance created " << reinterpret_cast<void *>(hal) ;
+ 
+ 	if (m_halTimeout.contains(name))
+ 		hal->setTimeout(m_halTimeout[name]);
+@@ -82,6 +87,31 @@ IsegResult iseg_connect(const char *name, const char *interface, void *reserved)
+ 	return result;
+ }
+ 
++IsegResult iseg_reconnect(const char *name, const char *interface)
++{
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
++
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  qInfo() <<"("<<__FUNCTION__ <<") "
++            <<"\033[0;32mReconnecting via: HAL socket instance: "
++            <<reinterpret_cast<void *>(hal)
++            <<"\033[0m";
++  const IsegResult result = hal->isegConnect(name, interface);
++
++  return result;
++}
++
++int iseg_isConnError(const char *name)
++{
++  if (!isKeyValid(name))
++    return ISEG_WRONG_SESSION_NAME;
++
++  IsegHalRemote *hal = m_halRemoteList.value(name);
++  return  hal->isConnError();
++}
++
++
+ IsegResult iseg_disconnect(const char *name)
+ {
+ 	if (!isKeyValid(name))
+diff --git isegHalRemoteClient/isegremoteapi.h isegHalRemoteClient/isegremoteapi.h
+index 7f217ab..b003ba4 100644
+--- isegHalRemoteClient/isegremoteapi.h
++++ isegHalRemoteClient/isegremoteapi.h
+@@ -33,6 +33,8 @@
+ EXTERN_C_BEGIN
+ ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_getItemString(const char *name, const char *object, char *result, int size);
+ ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_getItemPropertyString(const char *name, const char *object, char *result, int size);
++ISEGHALREMOTECLIENT_EXPORT int iseg_isConnError( const char *name );
++ISEGHALREMOTECLIENT_EXPORT IsegResult iseg_reconnect( const char *name, const char *interface );
+ EXTERN_C_END
+ 
+ #endif // ISEGREMOTEAPI_H

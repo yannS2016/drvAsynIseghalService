@@ -47,6 +47,7 @@ static const char *driverName = "drvAsynIsegHalService";
 #define ITEM_FQN_LEN    34
 #define ITEM_ADDR_LEN   6
 
+#define DEFAULT_PORT_RECONNECT 15 // 5 min.
 typedef  std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 
 // Handle for Poller Thread
@@ -208,20 +209,20 @@ static void startPolling( initHookState state ) {
   }
 }
 
-drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 autoConnect )
+drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 reconAttempt )
   : asynPortDriver( portName,
     1,                                // maxAddr
     NITEMS,
                                       // Interface mask
     asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask | asynDrvUserMask,
     asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
-    ASYN_CANBLOCK | ASYN_MULTIDEVICE, // asynFlags.
-    autoConnect,                      // Autoconnect
+    ASYN_CANBLOCK , // asynFlags.
+    1,                      // Autoconnect
     0,                                // Default priority
     0 ),                              // Default stack size
     iseghalExiting_( false ),
     conMan_( false ),
-    reconAttempt_( 10 )
+    reconAttempt_( reconAttempt > 0 ? reconAttempt : DEFAULT_PORT_RECONNECT )
 
 {
     static const char *functionName = "drvAsynIsegHalService";
@@ -234,14 +235,18 @@ drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *
     exitUser_     = pasynManager->createAsynUser( 0, 0 );
 
     asynStatus status;
-
-    /* Connect this user to the port so we can use it to cleanup connexion at exit*/
+printf( "\033[0;33m%s : ( %s ):'%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, reconAttempt_ );
+    /* Connect this user to the port so we can use it to to connect to the device and cleanup connexion at exit*/
     status = pasynCommonSyncIO->connect( session_, 0, &exitUser_, NULL );
     if ( status ) {
       printf( "%s:%s: pasynCommonSyncIO->connect failure, status=%d\n", driverName, functionName, status );
       return;
     }
-
+		status =  pasynCommonSyncIO->connectDevice( exitUser_ );
+		if ( status ) {
+      printf( "%s:%s: pasynCommonSyncIO->connectDevice failure, status=%d\n", driverName, functionName, status );
+      return;
+    }
     /* iseg HAL starts collecting data from hardware after connect.
       * allow 5 secs timeout to let all values 'initialize'
     */
@@ -294,10 +299,9 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
 
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
-    if( devInitOk_ && !conMan_ ) {
-      this->disconnect( isegHalUser );
-      drvIsegHalPollerThread_->changeInterval( 10.0 );
-    }
+    this->disconnect( isegHalUser );
+		// slow the polling thread, sync with autoconnect.
+    drvIsegHalPollerThread_->disable();
     isegHalUser->alarmStatus    = 1;
     isegHalUser->alarmSeverity  = 3;
     return asynError;
@@ -373,9 +377,10 @@ asynStatus drvAsynIsegHalService::writeFloat64( asynUser *pasynUser, epicsFloat6
   if ( iseghalExiting_ ) return asynSuccess;
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
-    if( devInitOk_ && !conMan_ ) {
-      this->disconnect( pasynUser );
-    }
+    disconnect( pasynUser );
+    drvIsegHalPollerThread_->disable();
+    pasynUser->alarmStatus    = 1;
+    pasynUser->alarmSeverity  = 3;
     return asynError;
   }
 
@@ -550,13 +555,12 @@ asynStatus drvAsynIsegHalService::writeUInt32Digital( asynUser *pasynUser, epics
 
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
-    if( devInitOk_ && !conMan_ ) {
-      this->disconnect( pasynUser );
-    }
+    disconnect( pasynUser );
+    drvIsegHalPollerThread_->disable();
+    pasynUser->alarmStatus    = 1;
+    pasynUser->alarmSeverity  = 3;
     return asynError;
   }
-
-  getTimeStamp( &timeStamp );
 
   itemIter it = isegHalItemsLookup.find( function );
 
@@ -566,7 +570,6 @@ asynStatus drvAsynIsegHalService::writeUInt32Digital( asynUser *pasynUser, epics
       return asynSuccess;
     }
   }
-
 
   getParamName( function, &propertyName );
 
@@ -694,9 +697,10 @@ asynStatus drvAsynIsegHalService::writeInt32( asynUser *pasynUser, epicsInt32 va
 
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
-    if( devInitOk_ && !conMan_ ) {
-      this->disconnect( pasynUser );
-    }
+    disconnect( pasynUser );
+    drvIsegHalPollerThread_->disable();
+    pasynUser->alarmStatus    = 1;
+    pasynUser->alarmSeverity  = 3;
     return asynError;
   }
 
@@ -828,9 +832,10 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
   printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
-    if( devInitOk_ && !conMan_ ) {
-      this->disconnect( pasynUser );
-    }
+    disconnect( pasynUser );
+    drvIsegHalPollerThread_->disable();
+    pasynUser->alarmStatus    = 1;
+    pasynUser->alarmSeverity  = 3;
     return asynError;
   }
 
@@ -1159,6 +1164,7 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
   else {
         printf( "\033[0;33miCS CONTROLLER MODEL '%s'\n\033[0m", model.value );
   }
+
   devInitOk_ = 1;
   pasynManager->exceptionConnect( pasynUser );
 
@@ -1174,25 +1180,24 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
-
+printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
              "%s: disconnect %s\n", session_, interface_ );
+
   // we only disconnect from the device if exiting
-  // attempts to the current device session failed.
   if( iseghalExiting_ ) {
     if( !devDisconnect( session_ ) ) {
       epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
                      "%s: cannot diconnect from %s ", session_, interface_ );
       return asynError;
     }
+		return asynSuccess;
   }
   /*
-    * if this call is not a shutdown exit, thus we lost connection to device
-    * iseghal will internally issues a reconnexion to the server. we need to listen to that
-    * inside our connect method called by autoconnect.
+    * if not a shutdown exit, we lost connection to device.
+    * we use autoConnect to issue reconnexion attempts to the server.
   */
   pasynManager->exceptionDisconnect( pasynUser );
-  conMan_ = true;
   return asynSuccess;
 }
 
@@ -1205,23 +1210,46 @@ asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
 int drvAsynIsegHalService::devConnect( std::string const& name, std::string const& interface ) {
 
   if ( devInitOk_ ) {
+		// still in error state?
     if( iseg_isConnError( name.c_str( ) ) ) {
-    // We session was disconnected! attempt reconexion n times
-    // otherwise close the connexion and open a new one. we use autoconnect freq here.
-        asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Attempting reconnexion to %s\n", name.c_str( ), interface.c_str( ) );
+			/* the session was disconnected! attempt reconexion
+			* otherwise close the connexion and open a new one. we use autoConnect freq here.
+			*/
+      asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Attempting reconnexion to %s:%d\n", name.c_str( ), interface.c_str( ), reconAttempt_ );
+			// if no reconnexion timeout
+			if( reconAttempt_ > 0 ) {
 
-        IsegResult status = iseg_reconnect( name.c_str( ), interface.c_str( ) );
-        if ( ISEG_OK != status ) return false;
-        conMan_ = 0;
-        drvIsegHalPollerThread_->changeInterval( 2.0 );
+				//if no reconnect return false
+				IsegResult status = iseg_reconnect( name.c_str( ), interface.c_str( ) );
+				if ( ISEG_OK != status ) {
+					reconAttempt_--;
+					return false;
+				}
+				// if reconnect enable poller.
+				drvIsegHalPollerThread_->enable();
+
+			} else {
+
+				// if time out, no more reconnection, disconnect to cleanup old session instance, set devInitOk_ to 0, return false
+				devDisconnect( name ); // need to verify that old hal instance from driver is indeed cleanup?
+				devInitOk_ = 0;
+				reconAttempt_ = DEFAULT_PORT_RECONNECT;
+				return false;
+			}
+
     }
-  }
-  else {
-    asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Opening connection to %s\n", name.c_str( ), interface.c_str( ) );
+  } else {
+
+    asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Opening new session to %s\n", name.c_str( ), interface.c_str( ) );
+
     IsegResult status = iseg_connect( name.c_str( ), interface.c_str( ), NULL );
     if ( ISEG_OK != status ) return false;
+
     // new iseghal session to iseg device.
     openedSessions.push_back( name );
+		// enable poller.
+		if( drvIsegHalPollerThread_ != NULL) drvIsegHalPollerThread_->enable();
+
     devInitOk_ = true;
   }
 
@@ -1253,6 +1281,7 @@ int drvAsynIsegHalService::devDisconnect( std::string const& name ) {
 int drvAsynIsegHalService::devConnected( std::string const& name ) {
   std::vector< std::string >::iterator it;
   it = std::find( openedSessions.begin( ), openedSessions.end( ), name );
+	printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, devInitOk_ );
   // cant access hal object unless connect was successfully called
   if( !devInitOk_ ) return false;
   return ( it != openedSessions.end( ) && !iseg_isConnError( name.c_str( ) ) );
@@ -1319,7 +1348,8 @@ extern "C" {
           fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
           return;
       }
-        drvIsegHalPollerThread_->changeInterval( pollingFreq );
+			if(drvIsegHalPollerThread_) drvIsegHalPollerThread_->changeInterval( pollingFreq );
+
     }
 
     if( strcmp( args[0].sval, "RequestInterval" ) == 0 ) {
@@ -1329,7 +1359,7 @@ extern "C" {
           fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
           return;
       }
-        drvIsegHalPollerThread_->changeqRequestInterval( qRequestInterval );
+        	if(drvIsegHalPollerThread_)  drvIsegHalPollerThread_->changeqRequestInterval( qRequestInterval );
     }
 
     // Set new debug level
