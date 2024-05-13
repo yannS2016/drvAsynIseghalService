@@ -1,0 +1,70 @@
+######################################
+#   Option: Ramp speed per channel #
+######################################
+record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedUp") {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedUp($(LINEADDRCHAN=0.0.0))")
+    field(TSE,  "-2")
+    field(EGU,  "V/s")
+
+    info(asyn:READBACK, "1")
+}
+
+record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedDown") {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedDown($(LINEADDRCHAN=0.0.0))")
+    field(TSE,  "-2")
+    field(EGU,  "V/s")
+
+    info(asyn:READBACK, "1")
+}
+
+record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedUp") {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedUp($(LINEADDRCHAN=0.0.0))")
+    field(TSE,  "-2")
+    field(EGU,  "A/s")
+
+    info(asyn:READBACK, "1")
+}
+
+record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedDown") {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedDown($(LINEADDRCHAN=0.0.0))")
+    field(TSE,  "-2")
+    field(EGU,  "A/s")
+
+    info(asyn:READBACK, "1")
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMin") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMin($(LINEADDRCHAN=0.0.0))")
+    field(SCAN, "I/O Intr")
+    field(EGU,  "V/s")
+    field(TSE,  "-2")
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMax") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMax($(LINEADDRCHAN=0.0.0))")
+    field(SCAN, "I/O Intr")
+    field(EGU,  "V/s")
+    field(TSE,  "-2")
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedMin") {
+    field(DTYP, "asynFloat64")
+    field(INP,  "@asyn($(PORT))DBL_CurrentRampSpeedMin($(LINEADDRCHAN=0.0.0))")
+    field(SCAN, "I/O Intr")
+    field(EGU,  "A/s")
+    field(TSE,  "-2")
+}
+
+record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedMax") {
+    field(DTYP, "asynFloat64")
+    field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedMax($(LINEADDRCHAN=0.0.0))")
+    field(SCAN, "I/O Intr")
+    field(EGU,  "A/s")
+    field(TSE,  "-2")
+}
