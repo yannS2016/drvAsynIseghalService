@@ -26,13 +26,13 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include <epicsThread.h>
 #include <asynPortDriver.h>
-#include <drvIsegHalPollerThread.h>
+//#include <drvIsegHalPollerThread.h>
 
 /* isegHAL includes */
 #include <isegremoteapi.h>
-
 
 /* maximum number of iseghal supported items
   * system - system information
@@ -42,7 +42,157 @@
 */
 // default: 5 can line max , 21 devices max, 10 channels max
 #define NITEMS 1050
+#define READ_BUF_LEN   40
+#define WRITE_BUF_LEN   8
+#define ITEM_TYPE_LEN   4
+#define ITEM_FQN_LEN    34
+#define ITEM_ADDR_LEN   6
 
+#define DEFAULT_PORT_RECONNECT 15 // 5 min.
+#define ISEG_ITEM_VALUE_MAX_LEN 200
+
+typedef enum {
+
+  UINT32DIGITALTYPE = 0,
+  FLOAT64TYPE = 1,
+  INT32TYPE = 2,
+  OCTECTTYPE = 3
+} drvIsegHalPoller_uflags_t;
+
+typedef struct {
+
+  drvIsegHalPoller_uflags_t uflags;
+  void *intrHandle;
+	char prevItemVal[READ_BUF_LEN];
+} intrUser_data_t;
+
+// Valid isegHal items lookup table.
+std::vector<std::string> isValidIsegHalItems
+{
+   "Status",
+   "EventStatus",
+   "EventMask",
+   "Control",
+   "CrateNumber",
+   "CrateList",
+   "ModuleNumber",
+   "ModuleList",
+   "CycleCounter",
+   "Read",
+   "LogLevel",
+   "LogPath",
+   "LiveInsertion",
+   "SaveConfiguration",
+   "EthName",
+   "EthAddress",
+   "ServerVersion",
+   "NetworkTimeout",
+   "SessionName",
+   // Can Line items
+   "BitRate",
+   // Crate/module items
+   "Connected",
+   "Alive",
+   "PowerOn",
+   "FanSpeed",
+   "SerialNumber",
+   "DeviceClass",
+   "FirmwareRelease",
+   "FirmwareName",
+   "Temperatures" ,
+   "Supplies",
+   "Article",
+
+   // device/module items
+   "SerialNumber",
+   "SampleRate",
+   "DigitalFilter",
+   "VoltageRampSpeed",
+   "CurrentRampSpeed",
+   "VoltageLimit"  ,
+   "CurrentLimit"  ,
+   "DoClear",
+   "FineAdjustment",
+   "KillEnable" ,
+   "ChannelNumber",
+   "Temperature" ,
+  // MICC option
+   "HighVoltageOk",
+
+   // Channel items
+   "VoltageSet",
+   "CurrentSet",
+   "VoltageMeasure"  ,
+   "CurrentMeasure"  ,
+   "VoltageBounds",
+   "CurrentBounds",
+   "VoltageNominal",
+   "CurrentNominal",
+   "DelayedTripAction",
+   "DelayedTripTime",
+   "ExternalInhibitAction",
+   "TemperatureTrip",
+
+   // Option Voltage controlled by temperature ( VCT )
+   "TemperatureExternal",
+   "VctCoefficient",
+
+   // Option STACK
+   "Resistance",
+   "VoltageRampPriority",
+   "VoltageBottom",
+
+   // Option Reversible
+   "OutputMode",
+   "OutputModeList",
+   "OutputPolarity",
+   "OutputPolarityList",
+   "VoltageMode",
+   "VoltageModeList",
+   "CurrentMode",
+   "CurrentModeList",
+   "VoltageRampSpeedUp",
+   "VoltageRampSpeedDown",
+   "VoltageRampSpeedMin",
+   "VoltageRampSpeedMax",
+   "CurrentRampSpeedUp",
+   "CurrentRampSpeedDown",
+   "CurrentRampSpeedMin",
+   "CurrentRampSpeedMax",
+   "VoltageTerminalMeasure",
+   "VoltageRiseRate",
+   "VoltageFallRate",
+   "VoltageLowTrip",
+   "VoltageTrip",
+   "VoltageTerminalTrip",
+   "CurrentTrip",
+   "PowerTrip",
+   "VoltageTripMax",
+   "VoltageTerminalTripMax",
+   "CurrentTripMax",
+   "TemperatureTripMax",
+   "PowerTripMax",
+   "VoltageLowTripTime",
+   "VoltageTripTime",
+   "VoltageTerminalTripTime",
+   "CurrentTripTime",
+   "TemperatureTripTime",
+   "PowerTripTime",
+   "TimeoutTripTime",
+   "Group",
+   "Name",
+   "TripAction",
+   "VoltageLowTripAction",
+   "VoltageTripAction",
+   "VoltageTerminalTripAction",
+   "CurrentTripAction",
+   "TemperatureTripAction",
+   "PowerTripAction",
+   "TimeoutTripAction",
+   "UserConfigFlags",
+};
+
+static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser);
 /* asynPortDriver for ISEG  iCS based HV systems (CC24 and iCSmini) using iseghal service library
   *
   * This asynPortDriver is the device support for ISEG Spezialelektronik GmbH iCS HV system starting at version 2.8.0 using the isegHALService
@@ -69,12 +219,9 @@ class drvAsynIsegHalService : public asynPortDriver {
     int devConnect( std::string const& name, std::string const& interface );
     int devConnected( std::string const& name );
     int devDisconnect( std::string const& name );
-		char *getSessionName ();
     int isValidIsegHalItem (const char *item);
-    asynStandardInterfaces getAsynStdIface();
 		asynStatus getIsegHalItem (asynUser *isegHalUser, IsegItem *item);
 
-    bool iseghalExiting_;
     asynUser *exitUser_;
 
   protected:
@@ -91,5 +238,38 @@ class drvAsynIsegHalService : public asynPortDriver {
     std::map<epicsUInt32, std::string> isegHalItemsLookup;
 };
 
+
+/* @brief   thread monitoring set values from isegHAL
+*
+* This thread checks regulary the value of all set-parameters
+* and updates the corresponding records if the values
+* within the EPICS db and the isegHAL are out of sync.
+*/
+class drvIsegHalPollerThread: public epicsThreadRunable {
+  public:
+    drvIsegHalPollerThread(drvAsynIsegHalService *portD);
+    virtual ~drvIsegHalPollerThread();
+    virtual void run();
+    epicsThread thread;
+
+    inline void changeInterval( double val ) { _pause = val; }
+		inline void changeqRequestInterval( double val ) { _qRequestInterval = val; }
+    inline double getInterval(){ return _pause; }
+
+    inline void setDbgLvl( int dbglvl ) { _debug = dbglvl; }
+    inline void disable() { _run = false; }
+    inline void enable() { _run = true; }
+    bool _drvIsegHalPollerThreadExiting;
+    asynStatus pLock();
+    asynStatus pUnlock();
+  private:
+    bool _run;
+    double _pause;
+    double _qRequestInterval;
+		epicsMutexId _pollMutexId;
+    unsigned _debug;
+    std::list<asynUser *> _pasynIntrUser;
+    std::list<intrUser_data_t *> _intrUser_data_gbg;
+};
 
 #endif

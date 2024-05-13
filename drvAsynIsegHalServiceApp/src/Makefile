@@ -19,7 +19,7 @@ DBD += drvAsynIsegHalService.dbd
 LIBRARY_IOC += drvAsynIsegHalService
 
 drvAsynIsegHalService_SRCS += drvAsynIsegHalServiceVersion.c
-drvAsynIsegHalService_SRCS += drvAsynIsegHalService.cpp drvIsegHalPollerThread.cpp
+drvAsynIsegHalService_SRCS += drvAsynIsegHalService.cpp
 
 drvAsynIsegHalService_SYS_LIBS += isegHAL-service
 drvAsynIsegHalService_LIBS += $(EPICS_BASE_IOC_LIBS)
