@@ -113,7 +113,6 @@ record( longout, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
-    field(EGU,  "ms")
 #enable this if not using $(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction-RB
 #info(asyn:READBACK, "1")
 }
