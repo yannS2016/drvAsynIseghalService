@@ -88,17 +88,19 @@ record( ao, "$(P)$(R):MOD$(ID=0)-VoltageRampSpeed" ) {
     field(DESC, "Set Module HV Channel voltage Ramp Speed")
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeed($(LINEADDR=0.0))")
+    field(EGU,  "%/s")
+    field(TSE,  "-2" )
 
     info(asyn:READBACK, "1")
-    field(TSE,  "-2" )
 }
 
 record( ao, "$(P)$(R):MOD$(ID=0)-CurrentRampSpeed" ) {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeed($(LINEADDR=0.0))")
+    field(TSE,  "-2" )
+    field(EGU,  "%/s")
 
     info(asyn:READBACK, "1")
-    field(TSE,  "-2" )
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-VoltageLimit" ) {
@@ -106,6 +108,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-VoltageLimit" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageLimit($(LINEADDR=0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "%")
     field(SCAN, "I/O Intr")
 }
 
@@ -114,6 +117,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-CurrentLimit" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentLimit($(LINEADDR=0.0))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "%")
     field(TSE,  "-2" )
 }
 
@@ -122,6 +126,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-Temperature" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperature($(LINEADDR=0.0))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "°C")
     field(TSE,  "-2" )
 }
 
@@ -146,6 +151,7 @@ record( longin, "$(P)$(R):MOD$(ID=0)-SampleRate" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_SampleRate($(LINEADDR=0.0))")
+    field(EGU,  "SPS")
     field(TSE,  "-2" )
 }
 

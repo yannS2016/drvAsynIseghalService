@@ -6,6 +6,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageSet") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageSet($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "V")
 
     info(asyn:READBACK, "1")
 }
@@ -14,6 +15,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentSet") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentSet($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "A")
 
     info(asyn:READBACK, "1")
 }
@@ -23,6 +25,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageMeasure") {
     field(INP,  "@asyn($(PORT))DBL_VoltageMeasure($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentMeasure") {
@@ -30,18 +33,21 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentMeasure") {
     field(INP,  "@asyn($(PORT))DBL_CurrentMeasure($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
     field(SCAN, "I/O Intr")
+    field(EGU,  "A")
 }
 
 record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageBounds") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageBounds($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "V")
 }
 
 record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentBounds") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentBounds($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "A")
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageNominal") {
@@ -50,6 +56,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageNominal") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageNominal($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "V")
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentNominal") {
@@ -58,6 +65,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentNominal") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentNominal($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
+    field(EGU,  "A")
 }
 
 record( bo, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):SetOn") {
@@ -105,6 +113,7 @@ record( longout, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "ms")
 #enable this if not using $(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction-RB
 #info(asyn:READBACK, "1")
 }
@@ -120,6 +129,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripTime") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_DelayedTripTime($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "s")
 
     info(asyn:READBACK, "1")
 }
@@ -137,6 +147,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "V/s")
 
     info(asyn:READBACK, "1")
 }
@@ -145,6 +156,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "V/s")
 
     info(asyn:READBACK, "1")
 }
@@ -153,6 +165,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "A/s")
 
     info(asyn:READBACK, "1")
 }
@@ -161,6 +174,7 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
+    field(EGU,  "A/s")
 
     info(asyn:READBACK, "1")
 }
@@ -243,9 +257,9 @@ record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CtrlVoltage") {
 
 record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):ArcError") {
     field(INP,  "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):Status.B9 CP")
-    field(DESC, "Max number of allowed arcs is exceeded")
+    field(DESC, "Ax number of allowed arcs is exceeded")
     field(ZNAM, "no arc error")
-    field(ONAM, "max allowed arcs")
+    field(ONAM, "Ax allowed arcs")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
@@ -288,7 +302,7 @@ record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):Trip") {
 
 record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentLimit") {
     field(INP,  "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):Status.BE CP")
-    field(DESC, "Imax current limit exceeded")
+    field(DESC, "IAx current limit exceeded")
     field(ZNAM, "OK")
     field(ONAM, "exceeded")
     field(ZSV,  "NO_ALARM")
@@ -297,7 +311,7 @@ record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentLimit") {
 
 record( bi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageLimit") {
     field(INP,  "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):Status.BF CP")
-    field(DESC, "Vmax voltage limit exceeded")
+    field(DESC, "VAx voltage limit exceeded")
     field(ZNAM, "OK")
     field(ONAM, "exceeded")
     field(ZSV,  "NO_ALARM")

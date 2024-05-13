@@ -13,6 +13,7 @@ record( longin, "$(P)$(R):CRATE$(ID=1000)-EventStatus") {
     field(INP,  "@asyn($(PORT))INT_EventStatus($(LINEADDR=0.1000))")
     field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh")
     field(SCAN, "I/O Intr")
+    field(TSE,  "-2")
 }
 
 record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh") {
@@ -47,6 +48,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[0]" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[0]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "°C")
     field(TSE,  "-2" )
 }
 
@@ -55,6 +57,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[1]" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[1]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "°C")
     field(TSE,  "-2" )
 }
 
@@ -63,6 +66,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Temperature[2]" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[2]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "°C")
     field(TSE,  "-2" )
 }
 
@@ -71,6 +75,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Backplane24V" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[0]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
     field(TSE,  "-2" )
 }
 
@@ -79,6 +84,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Backplane5V" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[2]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
     field(TSE,  "-2" )
 }
 
@@ -87,6 +93,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Supply5V" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[5]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
     field(TSE,  "-2" )
 }
 
@@ -95,6 +102,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Supply3V3" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[6]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
     field(TSE,  "-2" )
 }
 
@@ -103,6 +111,7 @@ record( ai, "$(P)$(R):CRATE$(ID=1000)-Bat24V" ) {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Supplies[8]($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
+    field(EGU,  "V")
     field(TSE,  "-2" )
 }
 

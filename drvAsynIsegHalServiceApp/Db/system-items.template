@@ -15,6 +15,7 @@ record( longin, "$(P)$(R):SYS-BitRate") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_BitRate")
+    field(EGU,  "b/s")
     field(TSE,  "-2")
 }
 

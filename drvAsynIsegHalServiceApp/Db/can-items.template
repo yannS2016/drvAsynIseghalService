@@ -14,6 +14,7 @@ record( longin, "$(P)$(R):CAN$(ID=0)-BitRate") {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_BitRate($(CANLINE=0))")
     field(TSE,  "-2")
+    field(EGU,  "b/s")
 }
 
 record( longin, "$(P)$(R):CAN$(ID=0)-ModuleNumber") {
