@@ -1281,7 +1281,7 @@ int drvAsynIsegHalService::devDisconnect( std::string const& name ) {
 int drvAsynIsegHalService::devConnected( std::string const& name ) {
   std::vector< std::string >::iterator it;
   it = std::find( openedSessions.begin( ), openedSessions.end( ), name );
-	printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, devInitOk_ );
+
   // cant access hal object unless connect was successfully called
   if( !devInitOk_ ) return false;
   return ( it != openedSessions.end( ) && !iseg_isConnError( name.c_str( ) ) );
