@@ -182,7 +182,24 @@ std::vector<std::string> isValidIsegHalItems
    "UserConfigFlags",
 };
 
+/*
+  * Userparam parsing method: skip separator
+*/
+static const char *skipSeparator( const char *pstart, int underscoreOk ){
+    const char *p = pstart;
+    while( *p && ( isspace( ( int )*p ) || ( underscoreOk && ( *p=='_' ) ) ) ) p++;
+    return p;
+}
 
+/*
+  * Userparam parsing method: Validate 'item' part of userparm string
+*/
+int drvAsynIsegHalService::isValidIsegHalItem( const char *item ) {
+  std::vector< std::string >::iterator it;
+  it = std::find( isValidIsegHalItems.begin( ), isValidIsegHalItems.end( ), std::string( item ) );
+  if( it != isValidIsegHalItems.end( ) ) return true;
+  return false;
+}
 /** Called by epicsAtExit to shutdown iseghal session
   * This ensure that disconnection cleanly happens inside the port thread
 */
@@ -203,25 +220,22 @@ static void startPolling( initHookState state ) {
   if ( state == initHookAfterIocRunning ) {
     initStatus = 1;
     // all record init done: interrupt list filled
-    if( drvIsegHalPollerThread_ != NULL ) {
-      drvIsegHalPollerThread_->thread.start( );
-    }
+    if( drvIsegHalPollerThread_) drvIsegHalPollerThread_->thread.start( );
   }
 }
 
 drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *interface, const char *icsCtrtype, epicsInt16 reconAttempt )
   : asynPortDriver( portName,
-    1,                                // maxAddr
+    1, 							// maxAddr
     NITEMS,
-                                      // Interface mask
-    asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask | asynDrvUserMask,
-    asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask,
+    asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask | asynDrvUserMask, // Interface mask
+    asynCommonMask | asynInt32Mask | asynUInt32DigitalMask | asynFloat64Mask | asynOctetMask, 									// Interrupt mask
     ASYN_CANBLOCK , // asynFlags.
-    1,                      // Autoconnect
-    0,                                // Default priority
-    0 ),                              // Default stack size
+    1,							// Autoconnect
+    0,							// Default priority
+    0 ),						// Default stack size
     iseghalExiting_( false ),
-    conMan_( false ),
+    reconStatus_( false ),
     reconAttempt_( reconAttempt > 0 ? reconAttempt : DEFAULT_PORT_RECONNECT )
 
 {
@@ -235,7 +249,6 @@ drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *
     exitUser_     = pasynManager->createAsynUser( 0, 0 );
 
     asynStatus status;
-printf( "\033[0;33m%s : ( %s ):'%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, reconAttempt_ );
     /* Connect this user to the port so we can use it to to connect to the device and cleanup connexion at exit*/
     status = pasynCommonSyncIO->connect( session_, 0, &exitUser_, NULL );
     if ( status ) {
@@ -245,7 +258,6 @@ printf( "\033[0;33m%s : ( %s ):'%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNC
 		status =  pasynCommonSyncIO->connectDevice( exitUser_ );
 		if ( status ) {
       printf( "%s:%s: pasynCommonSyncIO->connectDevice failure, status=%d\n", driverName, functionName, status );
-      return;
     }
     /* iseg HAL starts collecting data from hardware after connect.
       * allow 5 secs timeout to let all values 'initialize'
@@ -301,7 +313,9 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
   if( !devConnected( session_ ) ) {
     this->disconnect( isegHalUser );
 		// slow the polling thread, sync with autoconnect.
+/*     drvIsegHalPollerThread_->pLock(); */
     drvIsegHalPollerThread_->disable();
+/*     drvIsegHalPollerThread_->pUnlock(); */
     isegHalUser->alarmStatus    = 1;
     isegHalUser->alarmSeverity  = 3;
     return asynError;
@@ -353,6 +367,51 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
 }
 
 /*
+*  @brief   Called when asyn clients call pasynFloat64->read( ).
+*
+*  @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
+*  @param   [in]  value      Address of the value to read
+*
+*  @return  in case of no error occured asynSuccess is returned. Otherwise
+*           asynError or asynTimeout is returned. A error message is stored
+*           in pasynUser->errorMessage.
+*/
+asynStatus drvAsynIsegHalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value )
+{
+  static const char *functionName = "readFloat64";
+
+  epicsInt16 function = pasynUser->reason;
+  IsegItem item = EmptyIsegItem;
+  asynStatus status = asynSuccess;
+  epicsFloat64 dVal = 0;
+
+  printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
+  status = getIsegHalItem ( pasynUser, &item );
+  if( status != asynSuccess ) return asynError;
+
+  // set new paramter value and update record val field
+
+  dVal = ( epicsFloat64 )strtod ( item.value, NULL );
+  *value = dVal;
+  setDoubleParam ( function, dVal );
+  status = ( asynStatus ) getDoubleParam( function, &dVal );
+
+  if( status )
+    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
+                   "%s:%s: status=%d, function=%d, value=%f",
+                   session_, functionName, status, function, *value );
+  else
+    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
+               "%s:%s: function=%d, value=%f\n",
+              session_, functionName, function, *value );
+
+  pasynUser->alarmStatus = 0;
+  pasynUser->alarmSeverity = 0;
+
+  return status;
+}
+
+/*
   * @brief   Called when asyn clients call pasynFloat64->write( ).
   *
   * @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
@@ -378,7 +437,10 @@ asynStatus drvAsynIsegHalService::writeFloat64( asynUser *pasynUser, epicsFloat6
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
+		drvIsegHalPollerThread_->disable();
+/*     drvIsegHalPollerThread_->pLock();
     drvIsegHalPollerThread_->disable();
+    drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
     return asynError;
@@ -435,51 +497,6 @@ asynStatus drvAsynIsegHalService::writeFloat64( asynUser *pasynUser, epicsFloat6
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%f\n",
               session_, functionName, function, value );
-  return status;
-}
-
-/*
-*  @brief   Called when asyn clients call pasynFloat64->read( ).
-*
-*  @param   [in]  pasynUser  pasynUser structure that encodes the reason and address
-*  @param   [in]  value      Address of the value to read
-*
-*  @return  in case of no error occured asynSuccess is returned. Otherwise
-*           asynError or asynTimeout is returned. A error message is stored
-*           in pasynUser->errorMessage.
-*/
-asynStatus drvAsynIsegHalService::readFloat64( asynUser *pasynUser, epicsFloat64 *value )
-{
-  static const char *functionName = "readFloat64";
-
-  epicsInt16 function = pasynUser->reason;
-  IsegItem item = EmptyIsegItem;
-  asynStatus status = asynSuccess;
-  epicsFloat64 dVal = 0;
-
-  printf( "\033[0;33m%s : ( %s ) : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, function );
-  status = getIsegHalItem ( pasynUser, &item );
-  if( status != asynSuccess ) return asynError;
-
-  // set new paramter value and update record val field
-
-  dVal = ( epicsFloat64 )strtod ( item.value, NULL );
-  *value = dVal;
-  setDoubleParam ( function, dVal );
-  status = ( asynStatus ) getDoubleParam( function, &dVal );
-
-  if( status )
-    epicsSnprintf( pasynUser->errorMessage, pasynUser->errorMessageSize,
-                   "%s:%s: status=%d, function=%d, value=%f",
-                   session_, functionName, status, function, *value );
-  else
-    asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
-               "%s:%s: function=%d, value=%f\n",
-              session_, functionName, function, *value );
-
-  pasynUser->alarmStatus = 0;
-  pasynUser->alarmSeverity = 0;
-
   return status;
 }
 
@@ -556,7 +573,9 @@ asynStatus drvAsynIsegHalService::writeUInt32Digital( asynUser *pasynUser, epics
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
+/*     drvIsegHalPollerThread_->pLock(); */
     drvIsegHalPollerThread_->disable();
+/*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
     return asynError;
@@ -698,7 +717,9 @@ asynStatus drvAsynIsegHalService::writeInt32( asynUser *pasynUser, epicsInt32 va
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
+/*     drvIsegHalPollerThread_->pLock(); */
     drvIsegHalPollerThread_->disable();
+/*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
     return asynError;
@@ -833,7 +854,9 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
+/*     drvIsegHalPollerThread_->pLock(); */
     drvIsegHalPollerThread_->disable();
+/*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
     return asynError;
@@ -889,25 +912,6 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
               session_, functionName, function, value );
 
   return status;
-}
-
-/*
-  * Userparam parsing method: skip separator
-*/
-static const char *skipSeparator( const char *pstart, int underscoreOk ){
-    const char *p = pstart;
-    while( *p && ( isspace( ( int )*p ) || ( underscoreOk && ( *p=='_' ) ) ) ) p++;
-    return p;
-}
-
-/*
-  * Userparam parsing method: Validate 'item' part of userparm string
-*/
-int drvAsynIsegHalService::isValidIsegHalItem( const char *item ) {
-  std::vector< std::string >::iterator it;
-  it = std::find( isValidIsegHalItems.begin( ), isValidIsegHalItems.end( ), std::string( item ) );
-  if( it != isValidIsegHalItems.end( ) ) return true;
-  return false;
 }
 /*
   * @Brief  User param follows this format: 'DTYPE'_'item'($( ADDR ))
@@ -1119,7 +1123,6 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
   return asynSuccess;
 }
 
-
 /*
   * @brief       Connect driver to device
   * @param [in]  pasynUser  pasynUser structure that encodes the reason and address.
@@ -1135,7 +1138,6 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
                    "%s: Can't open %s: %s", session_, interface_, strerror( errno ) );
     return asynError;
   }
-
   /* Test that device is  responsive.
     * iCSModel: iseg iCS based HV system controller model
     * cc24: for crate systems
@@ -1144,13 +1146,17 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
   char iCSModel[ITEM_FQN_LEN];
 
   if( strcmp( deviceModel_, "cc24" ) == 0 ) {
+
     strcpy( iCSModel, "0.1000.Article" );
   } else if ( strcmp( deviceModel_, "icsmini" ) == 0) {
+
     strcpy( iCSModel, "0.0.Article" );
   } else if ( strcmp( deviceModel_, "shr" ) == 0){
+
     // Not comfirmed yet
     strcpy( iCSModel, "0.0.Article" );
   } else {
+
     return asynError;
   }
 
@@ -1167,9 +1173,7 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 
   devInitOk_ = 1;
   pasynManager->exceptionConnect( pasynUser );
-
   return asynSuccess;
-
 }
 
 /**
@@ -1185,12 +1189,15 @@ printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION_
              "%s: disconnect %s\n", session_, interface_ );
 
   // we only disconnect from the device if exiting
-  if( iseghalExiting_ ) {
+  if( iseghalExiting_ || reconStatus_) {
+
     if( !devDisconnect( session_ ) ) {
+
       epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
                      "%s: cannot diconnect from %s ", session_, interface_ );
       return asynError;
     }
+
 		return asynSuccess;
   }
   /*
@@ -1225,14 +1232,17 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 					reconAttempt_--;
 					return false;
 				}
+				reconStatus_ = true;
 				// if reconnect enable poller.
-				drvIsegHalPollerThread_->enable();
+				if(drvIsegHalPollerThread_)drvIsegHalPollerThread_->enable();
+
 
 			} else {
 
 				// if time out, no more reconnection, disconnect to cleanup old session instance, set devInitOk_ to 0, return false
 				devDisconnect( name ); // need to verify that old hal instance from driver is indeed cleanup?
 				devInitOk_ = 0;
+				reconStatus_ = false;
 				reconAttempt_ = DEFAULT_PORT_RECONNECT;
 				return false;
 			}
@@ -1241,16 +1251,17 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
   } else {
 
     asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Opening new session to %s\n", name.c_str( ), interface.c_str( ) );
-
+/* 		if( drvIsegHalPollerThread_ )
+			 if( drvIsegHalPollerThread_->thread.isSuspended () ) drvIsegHalPollerThread_->thread.start( ); */
     IsegResult status = iseg_connect( name.c_str( ), interface.c_str( ), NULL );
     if ( ISEG_OK != status ) return false;
 
     // new iseghal session to iseg device.
     openedSessions.push_back( name );
 		// enable poller.
-		if( drvIsegHalPollerThread_ != NULL) drvIsegHalPollerThread_->enable();
 
-    devInitOk_ = true;
+		if( drvIsegHalPollerThread_ ) drvIsegHalPollerThread_->enable();
+    devInitOk_ = 1;
   }
 
   /* iseg HAL starts collecting data from hardware after connect.
@@ -1266,7 +1277,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
   * @return      true if interface is already connected or if successfully connected.
 */
 int drvAsynIsegHalService::devDisconnect( std::string const& name ) {
-
+  printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
     int status = iseg_disconnect( name.c_str( ) );
     if ( status != ISEG_OK  ) return false;
     openedSessions.clear( );
@@ -1348,7 +1359,11 @@ extern "C" {
           fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
           return;
       }
-			if(drvIsegHalPollerThread_) drvIsegHalPollerThread_->changeInterval( pollingFreq );
+			if(drvIsegHalPollerThread_) {
+        drvIsegHalPollerThread_->pLock();
+        drvIsegHalPollerThread_->changeInterval( pollingFreq );
+        drvIsegHalPollerThread_->pUnlock();
+      }
 
     }
 
@@ -1359,9 +1374,13 @@ extern "C" {
           fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
           return;
       }
-        	if(drvIsegHalPollerThread_)  drvIsegHalPollerThread_->changeqRequestInterval( qRequestInterval );
-    }
 
+      if(drvIsegHalPollerThread_)  {
+          drvIsegHalPollerThread_->pLock();
+          drvIsegHalPollerThread_->changeqRequestInterval( qRequestInterval );
+          drvIsegHalPollerThread_->pUnlock();
+      }
+    }
     // Set new debug level
     if( strcmp( args[0].sval, "Debug" ) == 0 ) {
       unsigned dbgLevel = 0;
@@ -1370,7 +1389,11 @@ extern "C" {
         fprintf( stderr, "\033[31;1mInvalid value for key '%s': %s\033[0m\n", args[0].sval, args[1].sval );
         return;
       }
-      drvIsegHalPollerThread_->setDbgLvl( dbgLevel );
+      if(drvIsegHalPollerThread_)  {
+          drvIsegHalPollerThread_->pLock();
+          drvIsegHalPollerThread_->setDbgLvl( dbgLevel );
+          drvIsegHalPollerThread_->pUnlock();
+      }
     }
   }
 

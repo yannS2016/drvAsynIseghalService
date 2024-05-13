@@ -85,7 +85,7 @@ class drvAsynIsegHalService : public asynPortDriver {
     char  *deviceModel_;
     int   itemReason_;
 		bool  devInitOk_;
-		bool  conMan_;
+		bool  reconStatus_;
 		int   reconAttempt_;
     std::vector< std::string > openedSessions;
     std::map<epicsUInt32, std::string> isegHalItemsLookup;
