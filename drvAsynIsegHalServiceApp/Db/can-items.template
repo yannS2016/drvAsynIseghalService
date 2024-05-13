@@ -4,7 +4,7 @@
 record( mbbiDirect, "$(P)$(R):CAN$(ID=0)-Status") {
     field(DESC, "CAN Line status")
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(CANLINE=0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_Status($(CANLINE=0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2")
 }
