@@ -43,9 +43,9 @@ drvAsynIsegHalService *drvAsynIsegHalService_= NULL;
 static void drvIsegHalPollerThreadShutdown( void* pdrv)
 {
   drvIsegHalPollerThread *pPvt = (drvIsegHalPollerThread *) pdrv;
-	pPvt->pLock();
+/* 	pPvt->pLock(); */
   pPvt->_drvIsegHalPollerThreadExiting = true;
-	pPvt->pUnlock();
+/* 	pPvt->pUnlock(); */
   printf("\033[0;36m%s:%s Shutting down...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
   delete pPvt;
 }
@@ -163,6 +163,7 @@ asynStatus drvIsegHalPollerThread::pLock() {
     if (status) return asynError;
     else return asynSuccess;
 }
+
 asynStatus drvIsegHalPollerThread::pUnlock() {
 	epicsMutexUnlock(_pollMutexId);
 	return asynSuccess;
@@ -296,10 +297,10 @@ void drvIsegHalPollerThread::run()
       printf("\033[0;36m%s:%s Exiting poller thread...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
       break;
     }
-		pLock();
+/* 		pLock(); */
     if( _pause > 0. ) this->thread.sleep( _pause );
     if( !_run ) continue;
-		pUnlock();
+/* 		pUnlock(); */
 
     intrUserItr _intrUserItr = _pasynIntrUser.begin();
 		int _yesNo = 0;

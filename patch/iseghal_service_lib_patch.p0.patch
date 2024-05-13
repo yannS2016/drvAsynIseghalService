@@ -1,5 +1,5 @@
 diff --git isegHalRemoteClient/iseghalremote.cpp isegHalRemoteClient/iseghalremote.cpp
-index 8c68520..e03d1a1 100644
+index 8c68520..ce1686c 100644
 --- isegHalRemoteClient/iseghalremote.cpp
 +++ isegHalRemoteClient/iseghalremote.cpp
 @@ -30,6 +30,8 @@
@@ -121,6 +121,14 @@ index 8c68520..e03d1a1 100644
  bool IsegHalRemote::connectToHostEncrypted(const QString &host, quint16 port)
  {
  	m_socket->connectToHostEncrypted(host, port);
+@@ -146,6 +246,7 @@ IsegResult IsegHalRemote::isegConnect(const QString &session, const QString &int
+ 
+ IsegResult IsegHalRemote::isegDisconnect()
+ {
++	if( conError ) return ISEG_ERROR;
+ 	const QByteArray data = writeRead(ISEG_REMOTE_DISCONNECT);
+ 
+ 	m_socket->disconnectFromHost();
 diff --git isegHalRemoteClient/iseghalremote.h isegHalRemoteClient/iseghalremote.h
 index 60f6180..03202ea 100644
 --- isegHalRemoteClient/iseghalremote.h
@@ -160,7 +168,7 @@ index 60f6180..03202ea 100644
  
  #endif // ISEGHALREMOTE_H
 diff --git isegHalRemoteClient/isegremoteapi.cpp isegHalRemoteClient/isegremoteapi.cpp
-index 64f6458..7bb5de4 100644
+index 64f6458..0b00a88 100644
 --- isegHalRemoteClient/isegremoteapi.cpp
 +++ isegHalRemoteClient/isegremoteapi.cpp
 @@ -30,6 +30,7 @@
@@ -182,7 +190,7 @@ index 64f6458..7bb5de4 100644
  		return ISEG_WRONG_SESSION_NAME;
  
  	IsegHalRemote *hal = new IsegHalRemote();
-+  qInfo() <<"HAL socket instance created " << reinterpret_cast<void *>(hal) ;
++  qInfo() <<"HAL socket instance created " << (hal) ;
  
  	if (m_halTimeout.contains(name))
  		hal->setTimeout(m_halTimeout[name]);
