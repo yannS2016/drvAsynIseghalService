@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+
 // EPICS includes
 #include <epicsEvent.h>
 #include <epicsExport.h>
@@ -21,6 +22,7 @@
 #include <epicsTypes.h>
 #include <cantProceed.h>
 #include <epicsExit.h>
+
 // ASYN includes
 #include <asynDriver.h>
 #include <asynStandardInterfaces.h>
@@ -41,7 +43,9 @@ drvAsynIsegHalService *drvAsynIsegHalService_= NULL;
 static void drvIsegHalPollerThreadShutdown( void* pdrv)
 {
   drvIsegHalPollerThread *pPvt = (drvIsegHalPollerThread *) pdrv;
+	pPvt->pLock();
   pPvt->_drvIsegHalPollerThreadExiting = true;
+	pPvt->pUnlock();
   printf("\033[0;36m%s:%s Shutting down...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
   delete pPvt;
 }
@@ -64,10 +68,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
   drvIsegHalPoller_uflags_t ifaceType = (drvIsegHalPoller_uflags_t)intrUser->uflags;
 	char *prevItemVal = (char *)intrUser->prevItemVal;
 	epicsUInt16 mask;
+	// maybe makes this part of asynuser data?
   IsegItem item = EmptyIsegItem;
 	asynStatus status = asynSuccess;
-
-  /* printf("\033[0;36m%s:(%s) Reason '%d'\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason ); */
 
 	if(drvAsynIsegHalService_)
 		drvAsynIsegHalService_->lock();
@@ -142,10 +145,27 @@ drvIsegHalPollerThread::drvIsegHalPollerThread(drvAsynIsegHalService *portD)
 		_qRequestInterval(0.005)
 {
   if(!portD) return;
+
+  _pollMutexId = epicsMutexCreate();
+  if (!_pollMutexId) {
+		  printf( "\033[0;33m%s : ( %s ): ERROR: epicsMutexCreate failure\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
+			return;
+  }
+
   drvAsynIsegHalService_ = portD;
   _pasynIntrUser.clear();
   epicsAtExit(drvIsegHalPollerThreadShutdown, (void*)this);
-  printf("\033[0;36m%s:(%s) : Initialization completed \n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+  printf("\033[0;36m%s:(%s) : Poller Initialization completed \n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+}
+asynStatus drvIsegHalPollerThread::pLock() {
+    int status;
+    status = epicsMutexLock(_pollMutexId);
+    if (status) return asynError;
+    else return asynSuccess;
+}
+asynStatus drvIsegHalPollerThread::pUnlock() {
+	epicsMutexUnlock(_pollMutexId);
+	return asynSuccess;
 }
 
 /*
@@ -170,9 +190,9 @@ drvIsegHalPollerThread::~drvIsegHalPollerThread()
 
  _pasynIntrUser.clear();
  _intrUser_data_gbg.clear();
- drvAsynIsegHalService_ = NULL;
+ //drvAsynIsegHalService_ = NULL;
 
- printf("\033[0;36m%s:%s Cleaning up completed!\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
+ printf("\033[0;36m%s:%s Poller Cleaning completed!\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
 
 }
 
@@ -276,20 +296,27 @@ void drvIsegHalPollerThread::run()
       printf("\033[0;36m%s:%s Exiting poller thread...\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__ );
       break;
     }
-
+		pLock();
     if( _pause > 0. ) this->thread.sleep( _pause );
-
     if( !_run ) continue;
+		pUnlock();
 
     intrUserItr _intrUserItr = _pasynIntrUser.begin();
 		int _yesNo = 0;
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
+
 			if(pasynManager->isConnected((asynUser *)(*_intrUserItr), &_yesNo) != asynSuccess) continue;
-      status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), (asynQueuePriority)0, 0);
-      if (status != asynSuccess) {
-        asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  queueRequest Error "
-              "status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
-      }
+
+			if(_yesNo) { // may not be needed perhaps the queueRequest 'fail not connected' is good debug message?
+
+				status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), asynQueuePriorityMedium, 0);
+				if (status != asynSuccess) {
+
+					asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  queueRequest Error "
+								"status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
+				}
+			}
+
 			epicsThreadSleep(_qRequestInterval);
     }
   }

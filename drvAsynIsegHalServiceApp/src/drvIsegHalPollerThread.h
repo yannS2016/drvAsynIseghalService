@@ -72,11 +72,13 @@ class drvIsegHalPollerThread: public epicsThreadRunable {
     inline void disable() { _run = false; }
     inline void enable() { _run = true; }
     bool _drvIsegHalPollerThreadExiting;
-
+    asynStatus pLock();
+    asynStatus pUnlock();
   private:
     bool _run;
     double _pause;
     double _qRequestInterval;
+		epicsMutexId _pollMutexId;
     unsigned _debug;
     std::list<asynUser *> _pasynIntrUser;
     std::list<intrUser_data_t *> _intrUser_data_gbg;
