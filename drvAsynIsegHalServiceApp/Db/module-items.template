@@ -26,21 +26,29 @@ record( bo, "$(P)$(R):MOD$(ID=0)-Connected" ) {
 record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-Status" ) {
     field(DESC, "Lower 16 bit of module status register" )
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(LINEADDR=0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_Status($(LINEADDR=0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
 
+# record( longin, "$(P)$(R):MOD$(ID=0)-Status" ) {
+# field(DESC, "Lower 16 bit of module status register" )
+# field(DTYP, "asynInt32")
+# field(INP,  "@asyn($(PORT))INT_Status($(LINEADDR=0.0))")
+# field(SCAN, "I/O Intr")
+# field(TSE,  "-2" )
+# }
+
 record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-EventStatus" ) {
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_EventStatus($(LINEADDR=0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_EventStatus($(LINEADDR=0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
 
 record( longin, "$(P)$(R):MOD$(ID=0)-EventMask" ) {
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_EventMask($(LINEADDR=0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_EventMask($(LINEADDR=0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
@@ -246,28 +254,28 @@ record( bi, "$(P)$(R):MOD$(ID=0)-InputError" ) {
 record( bi, "$(P)$(R):MOD$(ID=0)-NoSumError" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B8 CP " )
     field(DESC, "All channle without failure")
-    field(ZNAM, "ok" )
-    field(ONAM, "Error" )
-    field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(ZNAM, "Error" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-NoRamp" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.B9 CP " )
     field(DESC, "All channles stable, no ramp active" )
-    field(ZNAM, "all channels stable" )
-    field(ONAM, "channel is ramping" )
+    field(ZNAM, "channel is ramping" )
+    field(ONAM, "all channels stable" )
     field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-SafetyLoopGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BA CP " )
     field(DESC, "Safety loop closed" )
-    field(ZNAM, "closed" )
-    field(ONAM, "broken" )
-    field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(ZNAM, "broken" )
+    field(ONAM, "closed" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-EventActive" ) {
@@ -282,28 +290,28 @@ record( bi, "$(P)$(R):MOD$(ID=0)-EventActive" ) {
 record( bi, "$(P)$(R):MOD$(ID=0)-ModuleGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BC CP " )
     field(DESC, "Module in good state" )
-    field(ZNAM, "ok" )
-    field(ONAM, "failure" )
-    field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(ZNAM, "failure" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-SupplyGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BD CP " )
     field(DESC, "Power supply good" )
-    field(ZNAM, "ok" )
-    field(ONAM, "Out of Range" )
-    field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(ZNAM, "Out of Range" )
+    field(ONAM, "ok" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-TemperatureGood" ) {
     field(INP,  "$(P)$(R):MOD$(ID=0)-Status.BE CP " )
     field(DESC, "Module temperature good" )
-    field(ZNAM, "within range" )
-    field(ONAM, "above 55 degC" )
-    field(ZSV,  "NO_ALARM" )
-    field(OSV,  "MAJOR" )
+    field(ZNAM, "above 55 degC" )
+    field(ONAM, "within range" )
+    field(ZSV,  "MAJOR" )
+    field(OSV,  "NO_ALARM" )
 }
 
 record( bi, "$(P)$(R):MOD$(ID=0)-KillEnable" ) {

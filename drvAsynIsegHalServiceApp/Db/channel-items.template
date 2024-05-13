@@ -90,14 +90,14 @@ record( bo, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):SetEmergency") {
 
 record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):Status") {
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_Status($(LINEADDRCHAN=0.0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_Status($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
 
 record( mbbiDirect, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):EventStatus") {
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_EventStatus($(LINEADDRCHAN=0.0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_EventStatus($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
@@ -119,7 +119,7 @@ record( longout, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction") {
 
 record(mbbi, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):DelayedTripAction-RB") {
     field(DTYP, "asynUInt32Digital")
-    field(INP,  "@asynMask($(PORT),0, 0xf)DIG_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
 }
 

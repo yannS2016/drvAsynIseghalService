@@ -2,32 +2,16 @@
 # ### Crate items: CC24/CC23/CC44/CC43 only ### #
 #######################################################
 record( longin, "$(P)$(R):CRATE$(ID=1000)-Status") {
-    field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT))INT_Status($(LINEADDR=0.1000))")
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_Status($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2")
 }
 
 record( longin, "$(P)$(R):CRATE$(ID=1000)-EventStatus") {
-    field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT))INT_EventStatus($(LINEADDR=0.1000))")
-    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh")
+    field(DTYP, "asynUInt32Digital")
+    field(INP,  "@asynMask($(PORT),0, 0xffff)DIG_EventStatus($(LINEADDR=0.1000))")
     field(SCAN, "I/O Intr")
-    field(TSE,  "-2")
-}
-
-record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusHigh") {
-    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
-    field(NOBT, "16")
-    field(SHFT, "16")
-    field(TSE,  "-2")
-    field(FLNK, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow")
-}
-
-record( mbbiDirect, "$(P)$(R):CRATE$(ID=1000)-EventStatusLow") {
-    field(INP,  "$(P)$(R):CRATE$(ID=1000)-EventStatus")
-    field(NOBT, "16")
-    field(SHFT, "0")
     field(TSE,  "-2")
 }
 
