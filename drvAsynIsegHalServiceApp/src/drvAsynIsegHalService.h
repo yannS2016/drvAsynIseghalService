@@ -48,15 +48,16 @@
 #define ITEM_FQN_LEN    34
 #define ITEM_ADDR_LEN   6
 
-#define DEFAULT_PORT_RECONNECT 15 // 5 min.
-#define ISEG_ITEM_VALUE_MAX_LEN 200
+#define DEFAULT_PORT_RECONNECT 		30 // 10 min.
+#define POLLER_AUTOCNNECT_SLEEP 	30 // second.
+#define ISEG_ITEM_VALUE_MAX_LEN 	200
 
 typedef enum {
 
   UINT32DIGITALTYPE = 0,
-  FLOAT64TYPE = 1,
-  INT32TYPE = 2,
-  OCTECTTYPE = 3
+  FLOAT64TYPE 			= 1,
+  INT32TYPE 				= 2,
+  OCTECTTYPE 				= 3
 } drvIsegHalPoller_uflags_t;
 
 typedef struct {
@@ -259,10 +260,12 @@ class drvIsegHalPollerThread: public epicsThreadRunable {
     inline void setDbgLvl( int dbglvl ) { _debug = dbglvl; }
     inline void disable() { _run = false; }
     inline void enable() { _run = true; }
-    bool _drvIsegHalPollerThreadExiting;
+
     asynStatus pLock();
     asynStatus pUnlock();
+
   private:
+
     bool _run;
     double _pause;
     double _qRequestInterval;
