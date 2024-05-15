@@ -404,7 +404,7 @@ asynStatus drvAsynIsegHalService::readUInt32Digital( asynUser *pasynUser, epicsU
     asynPrint( pasynUser, ASYN_TRACEIO_DEVICE,
                "%s:%s: function=%d, value=%d\n",
               session_, functionName, function, *value );
-							
+
   setParamAlarmStatus(  function, status);
   setParamAlarmSeverity( function, status);
   setParamStatus( function, status);
@@ -784,7 +784,7 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
   * @return  	in case of no error occured asynSuccess is returned. Otherwise
   *          	asynError or asynTimeout is returned. A error message is stored in pasynUser->errorMessage.
 */
-asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize ) 
+asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char *drvInfo, const char **pptypeName, size_t *psize )
 {
 
   static const char *functionName = "drvUserCreate";
@@ -973,7 +973,7 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
       pasynUser->reason = itemReason_;
       isegHalItemsLookup.insert( std::make_pair( itemReason_, std::string( iHalItem ) ) );
 
-      asynPrint( this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "\033[0;33m%s: ( %s ) : FQN : '%s' : Reason: '%d'\n\033[0m", 
+      asynPrint( this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "\033[0;33m%s: ( %s ) : FQN : '%s' : Reason: '%d'\n\033[0m",
 									driverName, functionName, iHalItemFQN, itemReason_ );
       itemReason_++;
     } else {
@@ -992,7 +992,7 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
   *              asynError or asynTimeout is returned. A error message is stored
   *              in pasynUser->errorMessage.
 */
-asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) 
+asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser )
 {
 
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
@@ -1053,7 +1053,7 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser )
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
-	
+
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
              "%s: disconnect %s\n", session_, interface_ );
 
@@ -1102,7 +1102,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 					reconAttempt_--;
 					return false;
 				}
-				
+
 				reconAttempt_ = DEVICE_RECONNECT_ATTEMPT;
 				return true;
 
@@ -1116,7 +1116,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 			}
 
     }
-  } 
+  }
 	else {
 
     asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Opening new session to %s\n", name.c_str( ), interface.c_str( ) );
@@ -1280,7 +1280,7 @@ void drvIsegHalPollerThread::run()
 
     pasynUser->reason = pInt32->pasynUser->reason;
     _intrUser->uflags = INT32TYPE;
-		
+
     _intrUser->intrHandle = (void*)pInt32;
 		_intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
@@ -1345,7 +1345,7 @@ void drvIsegHalPollerThread::run()
 			epicsThreadSleep(_qRequestInterval);
 			asynUser *intrUser = (asynUser *)(*_intrUserItr);
 			if(pasynManager->isConnected(intrUser, &_yesNo) != asynSuccess) continue;
-			
+
 			status = pasynManager->queueRequest(intrUser, asynQueuePriorityMedium, 0);
 			if (status != asynSuccess) {
 				asynPrint(intrUser, ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  queueRequest Error "
@@ -1405,7 +1405,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 				float64Value = (epicsFloat64)strtod (item.value, NULL);
 				if(status != asynSuccess) float64Value = NAN;
 
-				if ( strcmp( item.value, prevItemVal ) != 0 ) 
+				if ( strcmp( item.value, prevItemVal ) != 0 )
 					pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
 				break;
 			}
@@ -1413,13 +1413,13 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 		case UINT32DIGITALTYPE:
 			{
 				asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUserData->intrHandle;
-				
+
 				epicsUInt32 uInt32Value;
 				uInt32Value =  (epicsUInt32)atoi(item.value) ;
 				mask = pUInt32D->mask;
 				if (mask != 0 ) uInt32Value &= mask;
 				if(status != asynSuccess) uInt32Value = NAN;
-					
+
 				if ( strcmp( item.value, prevItemVal ) != 0 )
 						pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
 				break;
