@@ -49,7 +49,7 @@
 #define ITEM_ADDR_LEN   6
 
 #define DEFAULT_PORT_RECONNECT 		30 // 10 min.
-#define POLLER_AUTOCNNECT_SLEEP 	30 // second.
+#define POLLER_AUTOCONNECT_SLEEP 	30 // second.
 #define ISEG_ITEM_VALUE_MAX_LEN 	200
 
 typedef enum {
