@@ -112,7 +112,7 @@ drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *
     0,							// Default priority
     0 ),						// Default stack size
     reconStatus_( false ),
-    reconAttempt_( reconAttempt > 0 ? reconAttempt : DEFAULT_PORT_RECONNECT )
+    reconAttempt_( reconAttempt > 0 ? reconAttempt : DEVICE_RECONNECT_ATTEMPT )
 
 {
     static const char *functionName = "drvAsynIsegHalService";
@@ -973,7 +973,8 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
       pasynUser->reason = itemReason_;
       isegHalItemsLookup.insert( std::make_pair( itemReason_, std::string( iHalItem ) ) );
 
-      printf( "\033[0;33m%s : ( %s ) : FQN : '%s' : Reason: '%d'\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__, iHalItemFQN, itemReason_ );
+      asynPrint( this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "\033[0;33m%s: ( %s ) : FQN : '%s' : Reason: '%d'\n\033[0m", 
+									driverName, functionName, iHalItemFQN, itemReason_ );
       itemReason_++;
     } else {
       // we want the same reason to index a valid exisiting property name.
@@ -991,9 +992,12 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
   *              asynError or asynTimeout is returned. A error message is stored
   *              in pasynUser->errorMessage.
 */
-asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
+asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) 
+{
 
-  printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
+  asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
+             "%s: connect %s\n", session_, interface_ );
+
 	if ( drvAsynIsegHalExiting ) return asynSuccess;
   if( !devConnect( session_, interface_ ) ) {
     epicsSnprintf( pasynUser->errorMessage,pasynUser->errorMessageSize,
@@ -1035,8 +1039,9 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 
   devInitOk_ = 1;
   pasynManager->exceptionConnect( pasynUser );
-	// run poller at default freq
-	drvIsegHalPollerThread_->changeInterval( drvIsegHalPollerThread_->getInterval() );
+
+	// run poller at default freq: call iocsh function to reset correct frequency.
+	drvIsegHalPollerThread_->changeInterval( POLLER_DEFAULT_SLEEP );
   return asynSuccess;
 }
 
@@ -1048,8 +1053,7 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 *              in pasynUser->errorMessage.
 */
 asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
-	printf( "\033[0;33m%s : ( %s )\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
-
+	
   asynPrint( pasynUser, ASYN_TRACEIO_DRIVER,
              "%s: disconnect %s\n", session_, interface_ );
 
@@ -1099,7 +1103,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 					return false;
 				}
 				
-				reconAttempt_ = DEFAULT_PORT_RECONNECT;
+				reconAttempt_ = DEVICE_RECONNECT_ATTEMPT;
 				return true;
 
 			} else {
@@ -1107,7 +1111,7 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 				devDisconnect( name ); // need to verify that old hal instance from driver is indeed cleanup?
 				devInitOk_ = 0;
 				reconStatus_ = false;
-				reconAttempt_ = DEFAULT_PORT_RECONNECT;
+				reconAttempt_ = DEVICE_RECONNECT_ATTEMPT;
 				return false;
 			}
 
