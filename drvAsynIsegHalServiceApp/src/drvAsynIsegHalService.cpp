@@ -129,7 +129,7 @@ drvAsynIsegHalService::drvAsynIsegHalService( const char *portName, const char *
     /* iseg HAL starts collecting data from hardware after connect.
       * allow 5 secs timeout to let all values 'initialize'
     */
-    pasynManager->setAutoConnectTimeout( 5.0 );
+    //pasynManager->setAutoConnectTimeout( 1.0 );
 
     /* Register the shutdown function for epicsAtExit */
     epicsAtExit( iseghalSessionShutdown, ( void* )this );
@@ -187,7 +187,7 @@ asynStatus drvAsynIsegHalService::getIsegHalItem ( asynUser *isegHalUser, IsegIt
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( isegHalUser );
-    drvIsegHalPollerThread_->disable();
+    ////drvIsegHalPollerThread_->disable();
     isegHalUser->alarmStatus    = 1;
     isegHalUser->alarmSeverity  = 3;
     return asynError;
@@ -305,9 +305,9 @@ asynStatus drvAsynIsegHalService::writeFloat64( asynUser *pasynUser, epicsFloat6
   // Test if interface is connected to isegHAL server
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
-		drvIsegHalPollerThread_->disable();
+		//drvIsegHalPollerThread_->disable();
 /*     drvIsegHalPollerThread_->pLock();
-    drvIsegHalPollerThread_->disable();
+    //drvIsegHalPollerThread_->disable();
     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
@@ -438,7 +438,7 @@ asynStatus drvAsynIsegHalService::writeUInt32Digital( asynUser *pasynUser, epics
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
 /*     drvIsegHalPollerThread_->pLock(); */
-    drvIsegHalPollerThread_->disable();
+    //drvIsegHalPollerThread_->disable();
 /*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
@@ -580,7 +580,7 @@ asynStatus drvAsynIsegHalService::writeInt32( asynUser *pasynUser, epicsInt32 va
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
 /*     drvIsegHalPollerThread_->pLock(); */
-    drvIsegHalPollerThread_->disable();
+    //drvIsegHalPollerThread_->disable();
 /*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
@@ -716,7 +716,7 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
   if( !devConnected( session_ ) ) {
     disconnect( pasynUser );
 /*     drvIsegHalPollerThread_->pLock(); */
-    drvIsegHalPollerThread_->disable();
+    //drvIsegHalPollerThread_->disable();
 /*     drvIsegHalPollerThread_->pUnlock(); */
     pasynUser->alarmStatus    = 1;
     pasynUser->alarmSeverity  = 3;
@@ -1034,6 +1034,7 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser ) {
 
   devInitOk_ = 1;
   pasynManager->exceptionConnect( pasynUser );
+	drvIsegHalPollerThread_->changeInterval( 0.008 );
   return asynSuccess;
 }
 
@@ -1051,7 +1052,7 @@ asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
              "%s: disconnect %s\n", session_, interface_ );
 
   // we only disconnect from the device if exiting
-  if( drvAsynIsegHalExiting || reconStatus_) {
+  if( drvAsynIsegHalExiting ) {
 
     if( !devDisconnect( session_ ) ) {
 
@@ -1066,6 +1067,7 @@ asynStatus drvAsynIsegHalService::disconnect( asynUser *pasynUser ) {
     * if not a shutdown exit, we lost connection to device.
     * we use autoConnect to issue reconnexion attempts to the server.
   */
+	drvIsegHalPollerThread_->changeInterval( POLLER_AUTOCNNECT_SLEEP );
   pasynManager->exceptionDisconnect( pasynUser );
   return asynSuccess;
 }
@@ -1087,17 +1089,20 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
       asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Attempting reconnexion to %s:%d\n", name.c_str( ), interface.c_str( ), reconAttempt_ );
 			// if no reconnexion timeout
 			if( reconAttempt_ > 0 ) {
-
+				// ifsocket reconnect to device here,and another deconnection occurs, the call to disconnect will pipe a disconnect
+				// exception which we dont want need a way to avoid that.
 				//if no reconnect return false
 				IsegResult status = iseg_reconnect( name.c_str( ), interface.c_str( ) );
 				if ( ISEG_OK != status ) {
 					reconAttempt_--;
 					return false;
 				}
-				reconStatus_ = true;
+				
+				//reconStatus_ = true;
 				// if reconnect enable poller.
-				if(drvIsegHalPollerThread_)drvIsegHalPollerThread_->enable();
 
+				reconAttempt_ = DEFAULT_PORT_RECONNECT;
+				return true;
 
 			} else {
 
@@ -1110,27 +1115,22 @@ int drvAsynIsegHalService::devConnect( std::string const& name, std::string cons
 			}
 
     }
-  } else {
+  } 
+	else {
 
     asynPrint( pasynUserSelf, ASYN_TRACEIO_DRIVER,"%s: Opening new session to %s\n", name.c_str( ), interface.c_str( ) );
-/* 		if( drvIsegHalPollerThread_ )
-			 if( drvIsegHalPollerThread_->thread.isSuspended () ) drvIsegHalPollerThread_->thread.start( ); */
     IsegResult status = iseg_connect( name.c_str( ), interface.c_str( ), NULL );
-    if ( ISEG_OK != status ) return false;
 
+    if ( status != ISEG_OK) return false;
+		printf( "\033[0;33m%s : ( %s ) connect successfull !\n\033[0m", epicsThreadGetNameSelf( ), __FUNCTION__ );
     // new iseghal session to iseg device.
     openedSessions.push_back( name );
 		// enable poller.
 
-		if( drvIsegHalPollerThread_ ) drvIsegHalPollerThread_->enable();
     devInitOk_ = 1;
+    return true;
   }
 
-  /* iseg HAL starts collecting data from hardware after connect.
-    * wait 5 secs to let all values 'initialize'
-  */
-  epicsThreadSleep( 5 );
-  return true;
 }
 
 /*
@@ -1340,19 +1340,19 @@ void drvIsegHalPollerThread::run()
 		int _yesNo = 0;
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
 
-			if(pasynManager->isConnected((asynUser *)(*_intrUserItr), &_yesNo) != asynSuccess) continue;
+			epicsThreadSleep(_qRequestInterval);
+			asynUser *intrUser = (asynUser *)(*_intrUserItr);
+			if(pasynManager->isConnected(intrUser, &_yesNo) != asynSuccess) continue;
 
-			if(_yesNo) { // may not be needed perhaps the queueRequest 'fail not connected' is good debug message?
-
-				status = pasynManager->queueRequest((asynUser *)(*_intrUserItr), asynQueuePriorityMedium, 0);
-				if (status != asynSuccess) {
-
-					asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  queueRequest Error "
+			status = pasynManager->queueRequest(intrUser, asynQueuePriorityMedium, 0);
+			if (status != asynSuccess) {
+				asynPrint((asynUser *)(*_intrUserItr), ASYN_TRACE_ERROR,"drvIsegHalPollerThread::run  queueRequest Error "
 								"status=%d, error=%s\n",status, ((asynUser *)(*_intrUserItr))->errorMessage);
-				}
+				intrUser->alarmStatus = 9;
+				intrUser->alarmSeverity = 3;
+
 			}
 
-			epicsThreadSleep(_qRequestInterval);
     }
   }
 }
@@ -1396,6 +1396,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 			{
 				asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUser->intrHandle;
 				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+
 					epicsFloat64 float64Value;
 					float64Value = (epicsFloat64)strtod (item.value, NULL);
 					if(status != asynSuccess) float64Value = NAN;
@@ -1409,6 +1410,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 			{
 				asynUInt32DigitalInterrupt *pUInt32D = (asynUInt32DigitalInterrupt*)intrUser->intrHandle;
 				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+
 					epicsUInt32 uInt32Value;
 					uInt32Value =  (epicsUInt32)atoi(item.value) ;
 					mask = pUInt32D->mask;
@@ -1424,6 +1426,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 			{
 				asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUser->intrHandle;
 				if ( strcmp( item.value, prevItemVal ) != 0 ) {
+
 					epicsInt32 int32Value;
 					int32Value = (epicsInt32)atoi(item.value);
 					if(status != asynSuccess) int32Value = NAN;
