@@ -1,7 +1,7 @@
 record( ai, "$(P)$(R):MOD$(ID=0)-TemperatureExternal" ) {
     field(DESC, "Channel external Temp sensor")
     field(DTYP, "asynFloat64")
-    field(INP,  "@asyn($(PORT))DBL_TemperatureExternal($(LINEADDR=0.0))")
+    field(INP,  "@asyn($(PORT))DBL_TemperatureExternal($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
     field(EGU,  "°C")
     field(TSE,  "-2" )
@@ -10,7 +10,7 @@ record( ai, "$(P)$(R):MOD$(ID=0)-TemperatureExternal" ) {
 record( ao, "$(P)$(R):MOD$(ID=0)-VctCoefficient" ) {
     field(DESC, "Voltage control by temperature")
     field(DTYP, "asynFloat64")
-    field(OUT,  "@asyn($(PORT))DBL_VctCoefficient($(LINEADDR=0.0))")
+    field(OUT,  "@asyn($(PORT))DBL_VctCoefficient($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "V/K")
     field(TSE,  "-2" )
 

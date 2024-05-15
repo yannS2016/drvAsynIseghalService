@@ -1,0 +1,46 @@
+################################################################################
+# CANLINE      - item adress for the CAN line
+# LINEADDR     - item adress for the module or crate controller
+# LINEADDRCHAN - item adress for a channel
+################################################################################
+
+file "system-items.template"
+{
+	{}
+	{}
+}
+
+# Only indexing a single CAN Line here: add as needed
+file "can-items.template"
+{
+	pattern
+	{ CAN 	CANLINE }
+	{ CAN0  0 			}
+}
+###############################################
+# ICSMINI  based system
+###############################################
+# i.e MICC based controller 1 on CAN 0
+file "module-items.template"
+{
+	pattern
+	{ MOD		LINEADDR 	}
+	{ MICC  0.0				}
+}
+
+# i.e MICC based controller 1 Channels on CAN 0
+file "channel-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ MICC			0					0.0.0					}
+	{ MICC			1					0.0.1					}
+	{ MICC			2					0.0.2					}
+	{ MICC			3					0.0.3					}
+	{ MICC			4					0.0.4					}
+	{ MICC			5					0.0.5					}
+	{ MICC			6					0.0.6					}
+	{ MICC			7					0.0.7					}
+}
+
+# and so on...

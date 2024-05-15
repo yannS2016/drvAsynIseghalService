@@ -1,0 +1,107 @@
+################################################################################
+# CANLINE      - item adress for the CAN line
+# LINEADDR     - item adress for the module or crate controller
+# LINEADDRCHAN - item adress for a channel
+################################################################################
+
+file "system-items.template"
+{
+pattern
+{}
+{}
+}
+
+# Only indexing a single CAN Line here: add as needed
+file "can-items.template"
+{
+	pattern
+	{ CAN 	CANLINE }
+	{ CAN0  0 			}
+}
+
+#################################################
+# CC24 based system-items
+#################################################
+# Master 1 on CAN 0
+file "crate-items.template"
+{
+	pattern
+	{ CRATE		LINEADDR 	}
+	{ CC24-1  0.1000		}
+}
+# slaves list for Master 1 on CAN 0
+# Slave 1: EHS 8060n
+file "module-items.template"
+{
+	pattern
+	{ MOD				LINEADDR 	}
+	{ EHS8060n	0.1				}
+}
+
+file "channel-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ EHS8060n	0					0.1.0					}
+	{ EHS8060n	1					0.1.1					}
+	{ EHS8060n	2					0.1.2					}
+	{ EHS8060n	3					0.1.3					}
+	{ EHS8060n	4					0.1.4					}
+	{ EHS8060n	5					0.1.5					}
+	{ EHS8060n	6					0.1.6					}
+	{ EHS8060n	7					0.1.7					}
+}
+
+
+# Slave 2: MRPOD 0MPV
+file "module-items.template"
+{
+	pattern
+	{ MOD				LINEADDR 	}
+	{ 0MPV8008	0.2				}
+}
+
+file "channel-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ 0MPV8008	0					0.2.0					}
+	{ 0MPV8008	1					0.2.1					}
+	{ 0MPV8008	2					0.2.2					}
+	{ 0MPV8008	3					0.2.3					}
+	{ 0MPV8008	4					0.2.4					}
+	{ 0MPV8008	5					0.2.5					}
+	{ 0MPV8008	6					0.2.6					}
+	{ 0MPV8008	7					0.2.7					}
+}
+
+# Slave 4: EHS F220p-L
+file "module-items.template"
+{
+	pattern
+	{ MOD				LINEADDR 	}
+	{ EHSF220p	0.4				}
+}
+
+file "channel-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ EHSF220p	0					0.4.0					}
+	{ EHSF220p	1					0.4.1					}
+	{ EHSF220p	2					0.4.2					}
+	{ EHSF220p	3					0.4.3					}
+	{ EHSF220p	4					0.4.4					}
+	{ EHSF220p	5					0.4.5					}
+	{ EHSF220p	6					0.4.6					}
+	{ EHSF220p	7					0.4.7					}
+	{ EHSF220p	8					0.4.8					}
+	{ EHSF220p	9					0.4.9					}
+	{ EHSF220p	10				0.4.10				}
+	{ EHSF220p	11				0.4.11				}
+	{ EHSF220p	12				0.4.12				}
+	{ EHSF220p	13				0.4.13				}
+	{ EHSF220p	14				0.4.14				}
+	{ EHSF220p	15				0.4.15				}
+}
+# and so on...
