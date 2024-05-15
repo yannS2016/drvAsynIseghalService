@@ -1383,7 +1383,7 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 	// maybe makes this part of asynuser data?
   IsegItem item = EmptyIsegItem;
 	asynStatus status = asynSuccess;
-	epicsUInt16 mask;
+
 
 	if(drvAsynIsegHalService_)
 		drvAsynIsegHalService_->lock();
@@ -1416,8 +1416,11 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 
 				epicsUInt32 uInt32Value;
 				uInt32Value =  (epicsUInt32)atoi(item.value) ;
-				mask = pUInt32D->mask;
+
+				epicsUInt32 mask = pUInt32D->mask;
+				//printf("\033[0;33m%s : %s : Reason: %d: item value: %s: value: %d mask %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason, item.value,uInt32Value, status, mask );
 				if (mask != 0 ) uInt32Value &= mask;
+
 				if(status != asynSuccess) uInt32Value = NAN;
 
 				if ( strcmp( item.value, prevItemVal ) != 0 )

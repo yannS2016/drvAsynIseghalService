@@ -162,6 +162,8 @@ std::vector<std::string> isValidIsegHalItems
    "CurrentRampSpeedDown",
    "CurrentRampSpeedMin",
    "CurrentRampSpeedMax",
+
+	 // 0MPV WIENER
    "VoltageTerminalMeasure",
    "VoltageRiseRate",
    "VoltageFallRate",
