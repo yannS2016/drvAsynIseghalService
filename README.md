@@ -32,12 +32,12 @@ Note:
 ## Usage
 To load the driver use the command inside the IOC
 ```
-drvAsynIsegHalServiceConfig( "ISEGHALSESSION", "ISEGHALIFACE", "iCSMODEL", AUTOCNNECT=1 )
+drvAsynIsegHalServiceConfig( "ISEGHALSESSION", "ISEGHALIFACE", "iCSMODEL", RECONATTEMPT=5 )
 ```
 where `ISEGHALSESSION` is the name used by Asyn to identify the driver and the isegHAL connection,
 `ISEGHALIFACE` INTERFACE is the actual name of the hardware interface used by the iCS system (e.g. "can0" for a CAN interface)
 `iCSMODEL` refers to the ICS control system devices the driver connects to, i.e ICSMINI2, CC24 or SHR
-and `autoConnect` is a flag that whether the driver should automatically connect to the device must be set to 1.
+and `RECONATTEMPT` set the timeout for device reconnection, before a fresh connexion attempt is issued.
 
 ## Records
 EPICS records using `drvAsynIsegHalService`, set its `DTYP` field to one of the supported Asyn interfaces registered by the driver.
