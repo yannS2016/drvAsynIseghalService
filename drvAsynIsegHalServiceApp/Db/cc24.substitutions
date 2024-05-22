@@ -1,4 +1,8 @@
 ################################################################################
+# Author:	Yann Stephen Mandza
+# Date:		16/05/2024
+#
+# Brief:	Subs file for a CC24 controller connected as master i.e. ECH4XA_420 crate
 # CANLINE      - item adress for the CAN line
 # LINEADDR     - item adress for the module or crate controller
 # LINEADDRCHAN - item adress for a channel
@@ -39,6 +43,20 @@ file "module-items.template"
 }
 
 file "channel-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ EHS8060n	0					0.1.0					}
+	{ EHS8060n	1					0.1.1					}
+	{ EHS8060n	2					0.1.2					}
+	{ EHS8060n	3					0.1.3					}
+	{ EHS8060n	4					0.1.4					}
+	{ EHS8060n	5					0.1.5					}
+	{ EHS8060n	6					0.1.6					}
+	{ EHS8060n	7					0.1.7					}
+}
+
+file "option-ramp-speed-items.template"
 {
 	pattern
 	{ MOD				HVCHAN		LINEADDRCHAN 	}

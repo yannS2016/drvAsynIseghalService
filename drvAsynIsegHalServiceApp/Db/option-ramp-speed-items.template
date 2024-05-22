@@ -40,7 +40,6 @@ record( ao, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedDown") {
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMin") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMin($(LINEADDRCHAN=0.0.0))")
-    field(SCAN, "I/O Intr")
     field(EGU,  "V/s")
     field(TSE,  "-2")
 }
@@ -48,7 +47,6 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMin") {
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMax") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMax($(LINEADDRCHAN=0.0.0))")
-    field(SCAN, "I/O Intr")
     field(EGU,  "V/s")
     field(TSE,  "-2")
 }
@@ -56,15 +54,13 @@ record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):VoltageRampSpeedMax") {
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedMin") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentRampSpeedMin($(LINEADDRCHAN=0.0.0))")
-    field(SCAN, "I/O Intr")
     field(EGU,  "A/s")
     field(TSE,  "-2")
 }
 
 record( ai, "$(P)$(R):MOD$(ID=0)-HVCHAN$(ID=0):CurrentRampSpeedMax") {
     field(DTYP, "asynFloat64")
-    field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedMax($(LINEADDRCHAN=0.0.0))")
-    field(SCAN, "I/O Intr")
+    field(INP,  "@asyn($(PORT))DBL_CurrentRampSpeedMax($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "A/s")
     field(TSE,  "-2")
 }

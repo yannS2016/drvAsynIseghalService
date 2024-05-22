@@ -6,7 +6,7 @@
  * to control and monitor iseg high voltage via encrypted TCP/IP sessions.
  *
  * Author: Yann Stephen Mandza
- * Date: February 14, 2024
+ * Date:   February 14, 2024
 */
 
 // ANSI C/C++ includes
@@ -661,7 +661,6 @@ asynStatus drvAsynIsegHalService::readOctet( asynUser *pasynUser, char *value, s
 
   static const char *functionName = "readOctet";
 
-  char octetValue[maxChars];
   IsegItem item = EmptyIsegItem;
   asynStatus status = asynSuccess;
   epicsInt16 function = pasynUser->reason;
@@ -800,9 +799,7 @@ asynStatus drvAsynIsegHalService::drvUserCreate( asynUser *pasynUser, const char
   char iHalItemFQN[ITEM_FQN_LEN];
   char iHalItemAddr[ITEM_ADDR_LEN];
 
-  static bool firstPass = true;
-
-  if ( strlen( drvInfo ) > 4 /* && firstPass */ ) {
+  if ( strlen( drvInfo ) > 4 ) {
 
     pnext = skipSeparator( drvInfo,0 );
     p = pnext;

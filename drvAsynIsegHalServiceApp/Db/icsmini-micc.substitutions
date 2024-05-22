@@ -1,4 +1,9 @@
 ################################################################################
+# Author:	Yann Stephen Mandza
+# Date:		22/05/2024
+#
+# Brief:	Subs file for an ICSMINI2 controller connected to an MICC module
+#
 # CANLINE      - item adress for the CAN line
 # LINEADDR     - item adress for the module or crate controller
 # LINEADDRCHAN - item adress for a channel
@@ -42,5 +47,21 @@ file "channel-items.template"
 	{ MICC			6					0.0.6					}
 	{ MICC			7					0.0.7					}
 }
+
+# i.e MICC based controller 1 Channels with ramp speed items on CAN 0
+file "option-ramp-speed-items.template"
+{
+	pattern
+	{ MOD				HVCHAN		LINEADDRCHAN 	}
+	{ MICC			0					0.0.0					}
+	{ MICC			1					0.0.1					}
+	{ MICC			2					0.0.2					}
+	{ MICC			3					0.0.3					}
+	{ MICC			4					0.0.4					}
+	{ MICC			5					0.0.5					}
+	{ MICC			6					0.0.6					}
+	{ MICC			7					0.0.7					}
+}
+
 
 # and so on...
