@@ -37,7 +37,7 @@
 #include "drvAsynIsegHalService.h"
 
 static const char *driverName = "drvAsynIsegHalService";
-
+epicsTimeStamp now, after;
 typedef std::list<asynUser *>::iterator intrUserItr;
 typedef std::map<epicsUInt32, std::string>::const_iterator  itemIter;
 typedef std::list<intrUser_data_t *>::iterator intrUserDataItr;
@@ -1038,11 +1038,13 @@ asynStatus drvAsynIsegHalService::connect( asynUser *pasynUser )
         printf( "\033[0;33miCS CONTROLLER MODEL '%s'\n\033[0m", model.value );
   }
 
-  devInitOk_ = 1;
+
   pasynManager->exceptionConnect( pasynUser );
 
 	// run poller at default freq: call iocsh function to reset correct frequency.
+	
 	drvIsegHalPollerThread_->changeInterval( POLLER_DEFAULT_SLEEP );
+  devInitOk_ = 1;
   return asynSuccess;
 }
 
@@ -1168,11 +1170,11 @@ int drvAsynIsegHalService::devConnected( std::string const& name ) {
 drvIsegHalPollerThread::drvIsegHalPollerThread(drvAsynIsegHalService *portD)
   : thread( *this, "drvIsegHalPollerThread", epicsThreadGetStackSize( epicsThreadStackSmall ), 50 ),
     _run( true ),
-    _pause(1.),
+    _pause(1.0),
     _debug(0),
 		_qRequestInterval(0.002)
 {
-
+printf("\033[0;36m%s:%s Pause...%f\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, _pause );
   drvAsynIsegHalService_ = portD;
   if(!portD) return;
 	_pasynIntrUser.clear();
@@ -1340,9 +1342,9 @@ void drvIsegHalPollerThread::run()
 
     intrUserItr _intrUserItr = _pasynIntrUser.begin();
 		int _yesNo = 0;
+
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
 
-			epicsThreadSleep(_qRequestInterval);
 			asynUser *intrUser = (asynUser *)(*_intrUserItr);
 			if(pasynManager->isConnected(intrUser, &_yesNo) != asynSuccess) continue;
 
@@ -1358,6 +1360,10 @@ void drvIsegHalPollerThread::run()
 				drvAsynIsegHalService_->callParamCallbacks();
 			}
     }
+		
+
+		//printf("\033[0;36m%s:%s  Elapse time: %f\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, epicsTime::getCurrent() - epicsTime( now ));
+		//epicsThreadSleep(_pause);
   }
 }
 
@@ -1406,7 +1412,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
 				float64Value = (epicsFloat64)strtod (item.value, NULL);
 				if(status != asynSuccess) float64Value = NAN;
 
-				if ( strcmp( item.value, prevItemVal ) != 0 )
+
+
+				//if ( strcmp( item.value, prevItemVal ) != 0 )
 					pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
 				break;
 			}

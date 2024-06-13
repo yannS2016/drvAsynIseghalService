@@ -25,7 +25,7 @@ drvAsynIsegHalService_SYS_LIBS += isegHAL-service
 drvAsynIsegHalService_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 drvAsynIsegHalService_DBD += base.dbd
-drvAsynIsegHalService_DBD += asyn.dbd
+drvAsynIsegHalService_DBD += asyn.dbd mcoreutils.dbd
 drvAsynIsegHalService_DBD += drvAsynIsegHalServiceVersion.dbd
 drvAsynIsegHalService_DBD += drvAsynIsegHalServiceSupport.dbd
 #=============================
@@ -40,9 +40,9 @@ PROD_IOC += drvAsynIsegHalServiceTest
 DBD += drvAsynIsegHalServiceTest.dbd
 
 drvAsynIsegHalServiceTest_DBD += base.dbd
-drvAsynIsegHalServiceTest_DBD += drvAsynIsegHalService.dbd
+drvAsynIsegHalServiceTest_DBD += drvAsynIsegHalService.dbd mcoreutils.dbd 
 
-drvAsynIsegHalServiceTest_LIBS += drvAsynIsegHalService asyn
+drvAsynIsegHalServiceTest_LIBS += drvAsynIsegHalService asyn mcoreutils
 
 # drvAsynIsegHalService_registerRecordDeviceDriver.cpp will be created from drvAsynIsegHalService.dbd
 drvAsynIsegHalServiceTest_SRCS += drvAsynIsegHalServiceTest_registerRecordDeviceDriver.cpp
