@@ -18,6 +18,7 @@ DB += cc24.substitutions
 DB += cc24.db
 DB += icsmini-micc.substitutions
 DB += icsmini-micc.db
+DB += app.db
 # If <anyname>.db template is not named <anyname>*.template add
 # <anyname>_TEMPLATE = <templatename>
 

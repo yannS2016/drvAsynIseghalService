@@ -1,8 +1,8 @@
 ###############################
-# ### Channel item values ### #
+# ### Channel item values ##  #
 ###############################
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageSet") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageSet") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageSet($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
@@ -11,7 +11,7 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageSet") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentSet") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentSet") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentSet($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
@@ -20,37 +20,38 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentSet") {
     info(asyn:READBACK, "1")
 }
 
-record( ai, "$(P)$(R)$(MOD):$(HVCHAN):VoltageMeasure") {
+record( ai, "$(P)$(R)$(MOD)$(HVCHAN):VoltageMeasure") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageMeasure($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
-    field(SCAN, "I/O Intr")
+    #    field(SCAN, "I/O Intr")
+    field(MDEL, "-1")
     field(EGU,  "V")
 }
 
-record( ai, "$(P)$(R)$(MOD):$(HVCHAN):CurrentMeasure") {
+record( ai, "$(P)$(R)$(MOD)$(HVCHAN):CurrentMeasure") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentMeasure($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
-    field(SCAN, "I/O Intr")
+    #    field(SCAN, "I/O Intr")
     field(EGU,  "A")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageBounds") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageBounds") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageBounds($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
     field(EGU,  "V")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentBounds") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentBounds") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentBounds($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
     field(EGU,  "A")
 }
 
-record( ai, "$(P)$(R)$(MOD):$(HVCHAN):VoltageNominal") {
+record( ai, "$(P)$(R)$(MOD)$(HVCHAN):VoltageNominal") {
     field(PINI, "RUNNING")
     field(DESC, "HV channel nominal volatge")
     field(DTYP, "asynFloat64")
@@ -59,7 +60,7 @@ record( ai, "$(P)$(R)$(MOD):$(HVCHAN):VoltageNominal") {
     field(EGU,  "V")
 }
 
-record( ai, "$(P)$(R)$(MOD):$(HVCHAN):CurrentNominal") {
+record( ai, "$(P)$(R)$(MOD)$(HVCHAN):CurrentNominal") {
     field(PINI, "RUNNING")
     field(DESC, "HV Channel Nominal current")
     field(DTYP, "asynFloat64")
@@ -68,7 +69,7 @@ record( ai, "$(P)$(R)$(MOD):$(HVCHAN):CurrentNominal") {
     field(EGU,  "A")
 }
 
-record( bo, "$(P)$(R)$(MOD):$(HVCHAN):SetOn") {
+record( bo, "$(P)$(R)$(MOD)$(HVCHAN):SetOn") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_Control:3($(LINEADDRCHAN=0.0.0))")
     field(ZNAM, "HV channel off" )
@@ -78,7 +79,7 @@ record( bo, "$(P)$(R)$(MOD):$(HVCHAN):SetOn") {
     info(asyn:READBACK, "1")
 }
 
-record( bo, "$(P)$(R)$(MOD):$(HVCHAN):SetEmergency") {
+record( bo, "$(P)$(R)$(MOD)$(HVCHAN):SetEmergency") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_Control:5($(LINEADDRCHAN=0.0.0))")
     field(ZNAM, "")
@@ -88,42 +89,42 @@ record( bo, "$(P)$(R)$(MOD):$(HVCHAN):SetEmergency") {
     info(asyn:READBACK, "1")
 }
 
-record( mbbiDirect, "$(P)$(R)$(MOD):$(HVCHAN):Status") {
+record( mbbiDirect, "$(P)$(R)$(MOD)$(HVCHAN):Status") {
     field(DTYP, "asynUInt32Digital")
     field(INP,  "@asynMask($(PORT),0, 0xffffff)DIG_Status($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
 
-record( mbbiDirect, "$(P)$(R)$(MOD):$(HVCHAN):EventStatus") {
+record( mbbiDirect, "$(P)$(R)$(MOD)$(HVCHAN):EventStatus") {
     field(DTYP, "asynUInt32Digital")
     field(INP,  "@asynMask($(PORT),0, 0xffffff)DIG_EventStatus($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
     field(TSE,  "-2" )
 }
 
-record( mbboDirect, "$(P)$(R)$(MOD):$(HVCHAN):EventMask") {
+record( mbboDirect, "$(P)$(R)$(MOD)$(HVCHAN):EventMask") {
     field(DTYP, "asynUInt32Digital")
     field(OUT,  "@asynMask($(PORT),0, 0xffffff)DIG_EventMask($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
 }
 
-record( longout, "$(P)$(R)$(MOD):$(HVCHAN):DelayedTripAction") {
+record( longout, "$(P)$(R)$(MOD)$(HVCHAN):DelayedTripAction") {
     field(DESC, "HV Channel Trip Action")
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
-#enable this if not using $(P)$(R)$(MOD):$(HVCHAN):DelayedTripAction-RB
+#enable this if not using $(P)$(R)$(MOD)$(HVCHAN):DelayedTripAction-RB
 #info(asyn:READBACK, "1")
 }
 
-record(longin, "$(P)$(R)$(MOD):$(HVCHAN):DelayedTripAction-RB") {
+record(longin, "$(P)$(R)$(MOD)$(HVCHAN):DelayedTripAction-RB") {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_DelayedTripAction($(LINEADDRCHAN=0.0.0))")
     field(SCAN, "I/O Intr")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):DelayedTripTime") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):DelayedTripTime") {
     field(DESC, "HV Channel Trip response time")
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_DelayedTripTime($(LINEADDRCHAN=0.0.0))")
@@ -133,7 +134,7 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):DelayedTripTime") {
     info(asyn:READBACK, "1")
 }
 
-record( longout, "$(P)$(R)$(MOD):$(HVCHAN):ExternalInhibitAction") {
+record( longout, "$(P)$(R)$(MOD)$(HVCHAN):ExternalInhibitAction") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_ExternalInhibitAction($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -142,7 +143,7 @@ record( longout, "$(P)$(R)$(MOD):$(HVCHAN):ExternalInhibitAction") {
 ######################################
 #   Option: Ramp speed per channel   #
 ######################################
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRampSpeedUp") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -151,7 +152,7 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRampSpeedUp") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRampSpeedDown") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -160,7 +161,7 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRampSpeedDown") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentRampSpeedUp") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -169,7 +170,7 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentRampSpeedUp") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentRampSpeedDown") {
+record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -182,17 +183,17 @@ record( ao, "$(P)$(R)$(MOD):$(HVCHAN):CurrentRampSpeedDown") {
 # ### Decoding of Channel Status ### #
 ######################################
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Polarity") {
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):Polarity") {
     field(DESC, "HV Channel Polarity")
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B0 CP")
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B0 CP")
     field(ZNAM, "Negative")
     field(ONAM, "Positive")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Arc") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B1 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):Arc") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B1 CP")
     field(DESC, "arc or faster regulation error detection")
     field(ZNAM, "no arc or error ")
     field(ONAM, "Arc or Regulation Error")
@@ -200,8 +201,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Arc") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):InputError") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B2 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):InputError") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B2 CP")
     field(DESC, "non plausible module parameters")
     field(ZNAM, "OK")
     field(ONAM, "Input Error")
@@ -209,8 +210,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):InputError") {
     field(OSV,  "MINOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):On") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B3 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):On") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B3 CP")
     field(DESC, "switching ON the Channle HV")
     field(ZNAM, "off")
     field(ONAM, "on")
@@ -218,8 +219,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):On") {
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRamp") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B4 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRamp") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B4 CP")
     field(DESC, "Ramp is running")
     field(ZNAM, "stable")
     field(ONAM, "ramping")
@@ -227,8 +228,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageRamp") {
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Emergency") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B5 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):Emergency") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B5 CP")
     field(DESC, "Emergency off without ramp")
     field(ZNAM, "-")
     field(ONAM, "active")
@@ -236,8 +237,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Emergency") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CtrlCurrent") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B6 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):CtrlCurrent") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B6 CP")
     field(DESC, "Current control active")
     field(ZNAM, "-")
     field(ONAM, "active")
@@ -245,8 +246,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CtrlCurrent") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CtrlVoltage") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B7 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):CtrlVoltage") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B7 CP")
     field(DESC, "Voltage control active")
     field(ZNAM, "-")
     field(ONAM, "active")
@@ -254,8 +255,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CtrlVoltage") {
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):ArcError") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.B9 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):ArcError") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.B9 CP")
     field(DESC, "Ax number of allowed arcs is exceeded")
     field(ZNAM, "no arc error")
     field(ONAM, "Ax allowed arcs")
@@ -263,8 +264,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):ArcError") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CurrentBound") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BA CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):CurrentBound") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BA CP")
     field(DESC, "Current out of bounds")
     field(ZNAM, "OK")
     field(ONAM, "Out of bounds")
@@ -272,8 +273,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CurrentBound") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageBound") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BB CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):VoltageBound") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BB CP")
     field(DESC, "Voltage out of bounds")
     field(ZNAM, "OK")
     field(ONAM, "Out of bounds")
@@ -281,8 +282,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageBound") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):ExternalInhibit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BC CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):ExternalInhibit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BC CP")
     field(DESC, "External Inhibit")
     field(ZNAM, "no")
     field(ONAM, "yes")
@@ -290,8 +291,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):ExternalInhibit") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Trip") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BD CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):Trip") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BD CP")
     field(DESC, "Voltage/Current limit or Iset exceeded")
     field(ZNAM, "OK")
     field(ONAM, "tripped")
@@ -299,8 +300,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):Trip") {
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CurrentLimit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BE CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):CurrentLimit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BE CP")
     field(DESC, "IAx current limit exceeded")
     field(ZNAM, "OK")
     field(ONAM, "exceeded")
@@ -308,8 +309,8 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):CurrentLimit") {
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageLimit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):Status.BF CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):VoltageLimit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):Status.BF CP")
     field(DESC, "VAx voltage limit exceeded")
     field(ZNAM, "OK")
     field(ONAM, "exceeded")
@@ -320,96 +321,96 @@ record( bi, "$(P)$(R)$(MOD):$(HVCHAN):VoltageLimit") {
 ############################################
 # ### Decoding of Channel Event Status ### #
 ############################################
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventInputError") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B2 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventInputError") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B2 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MINOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventOn2Off") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B3 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventOn2Off") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B3 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventEndOfRamp") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B4 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventEndOfRamp") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B4 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventEmergency") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B5 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventEmergency") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B5 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventCtrlCurrent") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B6 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventCtrlCurrent") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B6 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventCtrlVoltage") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.B7 CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventCtrlVoltage") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.B7 CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "NO_ALARM")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventCurrentBounds") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BA CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventCurrentBounds") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BA CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventVoltageBounds") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BB CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventVoltageBounds") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BB CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventExternalInhibit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BC CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventExternalInhibit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BC CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventTrip") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BD CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventTrip") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BD CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventCurrentLimit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BE CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventCurrentLimit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BE CP")
     field(ZNAM, "inactive")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
     field(OSV,  "MAJOR")
 }
 
-record( bi, "$(P)$(R)$(MOD):$(HVCHAN):EventVoltageLimit") {
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):EventStatus.BF CP")
+record( bi, "$(P)$(R)$(MOD)$(HVCHAN):EventVoltageLimit") {
+    field(INP,  "$(P)$(R)$(MOD)$(HVCHAN):EventStatus.BF CP")
     field(ZNAM, "--")
     field(ONAM, "active")
     field(ZSV,  "NO_ALARM")
