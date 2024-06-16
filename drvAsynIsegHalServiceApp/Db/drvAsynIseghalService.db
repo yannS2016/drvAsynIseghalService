@@ -1,5 +1,5 @@
 ###############################
-# ### System item values ##
+# ### System item values     ##
 ###############################
 
 record( longin, "$(P)$(R):SYS-Status") {
