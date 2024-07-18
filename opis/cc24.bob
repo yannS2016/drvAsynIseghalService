@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Saved on 2024-07-18 16:50:52 by yanns-->
+<display version="2.0.0">
+  <name>CC24 Crate Controller</name>
+  <macros>
+    <CRATE>CC24-1</CRATE>
+    <P>DRVASYNISEGHAL:</P>
+    <R>ESS:</R>
+  </macros>
+  <width>609</width>
+  <height>723</height>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-titlebar_8</name>
+    <x>9</x>
+    <y>13</y>
+    <width>591</width>
+    <height>697</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BORDER" red="150" green="155" blue="151">
+      </color>
+    </background_color>
+    <corner_width>10</corner_width>
+    <corner_height>10</corner_height>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_15</name>
+    <x>25</x>
+    <y>62</y>
+    <width>561</width>
+    <height>258</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_23</name>
+    <text>$(CRATE) Information</text>
+    <x>29</x>
+    <y>13</y>
+    <width>571</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_15</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):FirmwareRelease</pv_name>
+    <x>178</x>
+    <y>82</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_162</name>
+    <text>Firmware Release:</text>
+    <x>40</x>
+    <y>82</y>
+    <width>130</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_16</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):FirmwareName</pv_name>
+    <x>178</x>
+    <y>116</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_164</name>
+    <text>Firmware Name:</text>
+    <x>48</x>
+    <y>116</y>
+    <width>122</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_165</name>
+    <text>Serial Number:</text>
+    <x>326</x>
+    <y>80</y>
+    <width>112</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_17</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):SerialNumber</pv_name>
+    <x>449</x>
+    <y>80</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_19</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Article</pv_name>
+    <x>449</x>
+    <y>114</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_167</name>
+    <text>Article:</text>
+    <x>385</x>
+    <y>114</y>
+    <width>53</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_16</name>
+    <x>30</x>
+    <y>630</y>
+    <width>561</width>
+    <height>64</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_24</name>
+    <text>Controls</text>
+    <x>90</x>
+    <y>580</y>
+    <width>450</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="bool_button" version="2.0.0">
+    <name>Slide Button_1</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):DoClearEvents</pv_name>
+    <x>361</x>
+    <y>644</y>
+    <width>130</width>
+    <off_label>Clear All Event</off_label>
+    <off_color>
+      <color name="Button_Background" red="236" green="236" blue="236">
+      </color>
+    </off_color>
+    <on_label>Event Cleared</on_label>
+    <on_color>
+      <color name="OK" red="61" green="216" blue="61">
+      </color>
+    </on_color>
+    <show_led>false</show_led>
+    <mode>1</mode>
+  </widget>
+  <widget type="slide_button" version="2.0.0">
+    <name>Slide Button_4</name>
+    <pv_name>ca://$(P)$(R):SYS-LiveInsertionMode</pv_name>
+    <label>Live Insertion Mode</label>
+    <x>51</x>
+    <y>644</y>
+    <width>214</width>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_17</name>
+    <x>26</x>
+    <y>368</y>
+    <width>561</width>
+    <height>210</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_25</name>
+    <text>Status</text>
+    <x>11</x>
+    <y>321</y>
+    <width>586</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_10</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Low24VBat</pv_name>
+    <x>48</x>
+    <y>389</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_11</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):High24VBat</pv_name>
+    <x>48</x>
+    <y>418</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_12</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Low5VBp</pv_name>
+    <x>48</x>
+    <y>448</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_13</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):High5VBp</pv_name>
+    <x>48</x>
+    <y>478</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_14</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Low24VBp</pv_name>
+    <x>48</x>
+    <y>508</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_15</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):High24VBp</pv_name>
+    <x>48</x>
+    <y>538</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_173</name>
+    <text>low +24 battery</text>
+    <x>76</x>
+    <y>382</y>
+    <width>121</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_174</name>
+    <text>high +24 battery</text>
+    <x>76</x>
+    <y>411</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_175</name>
+    <text>low +5 backplane</text>
+    <x>77</x>
+    <y>442</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_176</name>
+    <text>high +5 backplane</text>
+    <x>76</x>
+    <y>471</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_177</name>
+    <text>low +24 backplane</text>
+    <x>76</x>
+    <y>502</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_178</name>
+    <text>high +24 backplane</text>
+    <x>77</x>
+    <y>533</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_16</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):needService</pv_name>
+    <x>241</x>
+    <y>388</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_17</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):HighTemp</pv_name>
+    <x>241</x>
+    <y>418</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_18</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):SumError</pv_name>
+    <x>241</x>
+    <y>449</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_19</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):CrateOn</pv_name>
+    <x>241</x>
+    <y>478</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_179</name>
+    <text>high temperature</text>
+    <x>269</x>
+    <y>411</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_180</name>
+    <text>sum error</text>
+    <x>269</x>
+    <y>442</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_181</name>
+    <text>crate powered on</text>
+    <x>270</x>
+    <y>472</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_182</name>
+    <text>need Service</text>
+    <x>269</x>
+    <y>383</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_20</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):PowerFail</pv_name>
+    <x>241</x>
+    <y>509</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_21</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):HVOn</pv_name>
+    <x>241</x>
+    <y>538</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_183</name>
+    <text>high voltage on</text>
+    <x>270</x>
+    <y>532</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_184</name>
+    <text>crate power failed</text>
+    <x>270</x>
+    <y>502</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_22</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):ShutDown</pv_name>
+    <x>421</x>
+    <y>390</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_23</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Enabled</pv_name>
+    <x>421</x>
+    <y>420</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_24</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):FastOff</pv_name>
+    <x>421</x>
+    <y>451</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_186</name>
+    <text>crate enabled</text>
+    <x>449</x>
+    <y>413</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_187</name>
+    <text>crate fast off</text>
+    <x>449</x>
+    <y>444</y>
+    <width>108</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_189</name>
+    <text>crate shut down</text>
+    <x>449</x>
+    <y>385</y>
+    <width>108</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_22</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Temperature[0]</pv_name>
+    <x>178</x>
+    <y>170</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_170</name>
+    <text>Temperature [0]:</text>
+    <x>36</x>
+    <y>170</y>
+    <width>134</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_23</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Temperature[1]</pv_name>
+    <x>178</x>
+    <y>204</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_171</name>
+    <text>Temperature[1]:</text>
+    <x>26</x>
+    <y>204</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_24</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Temperature[2]</pv_name>
+    <x>178</x>
+    <y>238</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_172</name>
+    <text>Temperature[2]:</text>
+    <x>26</x>
+    <y>238</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_25</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):FanSpeed</pv_name>
+    <x>178</x>
+    <y>273</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_188</name>
+    <text>Fan Speed:</text>
+    <x>36</x>
+    <y>273</y>
+    <width>134</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_26</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Backplane24V</pv_name>
+    <x>449</x>
+    <y>170</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_190</name>
+    <text>BackPlane 24V:</text>
+    <x>295</x>
+    <y>170</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_27</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Backplane5V</pv_name>
+    <x>449</x>
+    <y>204</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_191</name>
+    <text>BackPlane 5V:</text>
+    <x>295</x>
+    <y>204</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_28</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Supply5V</pv_name>
+    <x>449</x>
+    <y>240</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_192</name>
+    <text>Supply 5V:</text>
+    <x>291</x>
+    <y>240</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_29</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Supply3V3</pv_name>
+    <x>449</x>
+    <y>274</y>
+    <width>120</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_193</name>
+    <text>Supply 3.3V:</text>
+    <x>295</x>
+    <y>274</y>
+    <width>143</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_25</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Alive</pv_name>
+    <x>421</x>
+    <y>491</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_26</name>
+    <pv_name>ca://$(P)$(R)$(CRATE):Connected</pv_name>
+    <x>421</x>
+    <y>522</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_194</name>
+    <text>Alive</text>
+    <x>452</x>
+    <y>484</y>
+    <width>75</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_195</name>
+    <text>Connected</text>
+    <x>452</x>
+    <y>515</y>
+    <width>95</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+</display>

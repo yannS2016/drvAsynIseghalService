@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Saved on 2024-07-09 17:07:40 by yanns-->
+<display version="2.0.0">
+  <name>MICC Module Information</name>
+  <macros>
+    <MOD>MICC0:</MOD>
+    <P>LAB-Crm:</P>
+    <R>RFS-PS-</R>
+  </macros>
+  <width>473</width>
+  <height>786</height>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-titlebar_8</name>
+    <x>9</x>
+    <y>13</y>
+    <width>450</width>
+    <height>760</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BORDER" red="150" green="155" blue="151">
+      </color>
+    </background_color>
+    <corner_width>10</corner_width>
+    <corner_height>10</corner_height>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_15</name>
+    <x>29</x>
+    <y>62</y>
+    <width>410</width>
+    <height>310</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_23</name>
+    <text>Device Information</text>
+    <x>29</x>
+    <y>13</y>
+    <width>400</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_15</name>
+    <pv_name>ca://$(P)$(R)$(MOD)FirmwareRelease</pv_name>
+    <x>192</x>
+    <y>82</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_162</name>
+    <text>Firmware Release:</text>
+    <x>54</x>
+    <y>82</y>
+    <width>130</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_16</name>
+    <pv_name>ca://$(P)$(R)$(MOD)FirmwareName</pv_name>
+    <x>192</x>
+    <y>117</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_164</name>
+    <text>Firmware Name:</text>
+    <x>62</x>
+    <y>117</y>
+    <width>122</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_165</name>
+    <text>Serial Number:</text>
+    <x>72</x>
+    <y>153</y>
+    <width>112</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_17</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SerialNumber</pv_name>
+    <x>192</x>
+    <y>153</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_18</name>
+    <pv_name>ca://$(P)$(R)$(MOD)ChannelNumber</pv_name>
+    <x>192</x>
+    <y>189</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_166</name>
+    <text>Channel Number:</text>
+    <x>55</x>
+    <y>189</y>
+    <width>129</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_19</name>
+    <pv_name>ca://$(P)$(R)$(MOD)Article</pv_name>
+    <x>192</x>
+    <y>224</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_167</name>
+    <text>Article:</text>
+    <x>131</x>
+    <y>224</y>
+    <width>53</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_20</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SampleRate</pv_name>
+    <x>192</x>
+    <y>259</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_168</name>
+    <text>Sample Rate:</text>
+    <x>91</x>
+    <y>259</y>
+    <width>92</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_21</name>
+    <pv_name>ca://$(P)$(R)$(MOD)DigitalFilter</pv_name>
+    <x>192</x>
+    <y>294</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_169</name>
+    <text>Digital Filter:</text>
+    <x>91</x>
+    <y>294</y>
+    <width>93</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_16</name>
+    <x>29</x>
+    <y>666</y>
+    <width>411</width>
+    <height>91</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_24</name>
+    <text>Controls</text>
+    <x>9</x>
+    <y>621</y>
+    <width>450</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="slide_button" version="2.0.0">
+    <name>Slide Button_1</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SetFineAdjustment</pv_name>
+    <label>Fine Adjust</label>
+    <x>40</x>
+    <y>716</y>
+    <width>130</width>
+  </widget>
+  <widget type="slide_button" version="2.0.0">
+    <name>Slide Button_4</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SetKillEnable</pv_name>
+    <label>Kill Enable</label>
+    <x>39</x>
+    <y>676</y>
+    <width>125</width>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>BGGrey03-background_17</name>
+    <x>29</x>
+    <y>413</y>
+    <width>410</width>
+    <height>210</height>
+    <line_width>0</line_width>
+    <background_color>
+      <color name="GROUP-BACKGROUND" red="200" green="205" blue="201">
+      </color>
+    </background_color>
+    <corner_width>5</corner_width>
+    <corner_height>5</corner_height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BGGrey02-title_25</name>
+    <text>Status</text>
+    <x>14</x>
+    <y>370</y>
+    <width>450</width>
+    <height>50</height>
+    <font>
+      <font name="GROUP-HEADER" family="Source Sans Pro" style="BOLD_ITALIC" size="21.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color name="WHITE" red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <wrap_words>false</wrap_words>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_10</name>
+    <pv_name>ca://$(P)$(R)$(MOD)FineAdjustment</pv_name>
+    <x>51</x>
+    <y>434</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_11</name>
+    <pv_name>ca://$(P)$(R)$(MOD)LiveInsertion</pv_name>
+    <x>51</x>
+    <y>463</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_12</name>
+    <pv_name>ca://$(P)$(R)$(MOD)needService</pv_name>
+    <x>51</x>
+    <y>493</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_13</name>
+    <pv_name>ca://$(P)$(R)$(MOD)InputError</pv_name>
+    <x>51</x>
+    <y>523</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_14</name>
+    <pv_name>ca://$(P)$(R)$(MOD)NoSumError</pv_name>
+    <x>51</x>
+    <y>553</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_15</name>
+    <pv_name>ca://$(P)$(R)$(MOD)NoRamp</pv_name>
+    <x>51</x>
+    <y>583</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_173</name>
+    <text>Fine Adjustment</text>
+    <x>79</x>
+    <y>427</y>
+    <width>121</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_174</name>
+    <text>Live Insertion</text>
+    <x>79</x>
+    <y>456</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_175</name>
+    <text>Need Service</text>
+    <x>80</x>
+    <y>487</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_176</name>
+    <text>Input Error</text>
+    <x>79</x>
+    <y>516</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_177</name>
+    <text>No Sum Error</text>
+    <x>79</x>
+    <y>547</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_178</name>
+    <text>No Ramp</text>
+    <x>80</x>
+    <y>578</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_16</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SafetyLoopGood</pv_name>
+    <x>244</x>
+    <y>433</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_17</name>
+    <pv_name>ca://$(P)$(R)$(MOD)EventActive</pv_name>
+    <x>244</x>
+    <y>463</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_18</name>
+    <pv_name>ca://$(P)$(R)$(MOD)ModuleGood</pv_name>
+    <x>244</x>
+    <y>494</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_19</name>
+    <pv_name>ca://$(P)$(R)$(MOD)SupplyGood</pv_name>
+    <x>244</x>
+    <y>523</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_179</name>
+    <text>Event Active</text>
+    <x>272</x>
+    <y>456</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_180</name>
+    <text>Module Good</text>
+    <x>272</x>
+    <y>487</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_181</name>
+    <text>Supply Good</text>
+    <x>273</x>
+    <y>517</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_182</name>
+    <text>Safety Loop Good</text>
+    <x>272</x>
+    <y>428</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_20</name>
+    <pv_name>ca://$(P)$(R)$(MOD)TemperatureGood</pv_name>
+    <x>244</x>
+    <y>554</y>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_21</name>
+    <pv_name>ca://$(P)$(R)$(MOD)KillEnable</pv_name>
+    <x>244</x>
+    <y>583</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_183</name>
+    <text>Kill Enable</text>
+    <x>273</x>
+    <y>577</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_184</name>
+    <text>Temperature Good</text>
+    <x>273</x>
+    <y>547</y>
+    <width>150</width>
+    <height>30</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Spinner</name>
+    <pv_name>ca://$(P)$(R)$(MOD)VoltageRampSpeed</pv_name>
+    <x>313</x>
+    <y>718</y>
+    <width>113</width>
+    <height>30</height>
+    <precision>1</precision>
+    <show_units>true</show_units>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_185</name>
+    <text>HV Ramp Speed:</text>
+    <x>188</x>
+    <y>721</y>
+    <width>120</width>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_22</name>
+    <pv_name>ca://$(P)$(R)$(MOD)Temperature</pv_name>
+    <x>192</x>
+    <y>329</y>
+    <width>228</width>
+    <height>30</height>
+    <font>
+      <font name="Fine Print" family="Source Sans Pro" style="REGULAR" size="14.0">
+      </font>
+    </font>
+    <format>1</format>
+    <precision>2</precision>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+    <border_color>
+      <color name="GRAY-BORDER" red="121" green="121" blue="121">
+      </color>
+    </border_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_170</name>
+    <text>Temperature:</text>
+    <x>91</x>
+    <y>329</y>
+    <width>93</width>
+    <height>30</height>
+    <horizontal_alignment>2</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>LED_22</name>
+    <pv_name>ca://$(P)$(R)$(MOD)Alive</pv_name>
+    <x>296</x>
+    <y>682</y>
+    <width>126</width>
+    <off_color>
+      <color name="ERROR" red="252" green="13" blue="27">
+      </color>
+    </off_color>
+    <square>true</square>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_186</name>
+    <text>Alive:</text>
+    <x>220</x>
+    <y>680</y>
+    <width>90</width>
+    <horizontal_alignment>1</horizontal_alignment>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+</display>
