@@ -1,15 +1,15 @@
-record(ai, "$(P)$(R)$(MOD):$(HVCHAN):Volt-RB" ) {
+record(ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-Volt-RB" ) {
     field(DESC, "HV Channel voltage")
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):VoltageMeasure PP")
+    field(INP,  "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageMeasure PP")
     field(EGU,  "V")
     field(MDEL, "-1")
     # Sync with Site timing system
     field(TSEL, "$(EVR)Cycle-Cnt.TIME CP")
 }
 
-record(ai, "$(P)$(R)$(MOD):$(HVCHAN):Curr-RB" ) {
+record(ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-Curr-RB" ) {
     field(DESC, "HV Channel Current")
-    field(INP,  "$(P)$(R)$(MOD):$(HVCHAN):CurrentMeasure PP")
+    field(INP,  "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentMeasure PP")
     field(EGU,  "V")
     field(MDEL, "-1")
     # Sync with Site timing system

@@ -1,54 +1,54 @@
 #######################################
 #   Option: Reversible (SHR / NHR )   #
 #######################################
-record( longout, "$(P)$(R)$(MOD)$(HVCHAN):OutputMode" ) {
+record( longout, "$(P)$(R)#$(MOD)-$(HVCHAN)-OutputMode" ) {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_OutputMode($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)$(MOD)$(HVCHAN):OutputModeList" ) {
+record( stringin, "$(P)$(R)#$(MOD)-$(HVCHAN)-OutputModeList" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_OutputModeList($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( stringout, "$(P)$(R)$(MOD)$(HVCHAN):OutputPolarity" ) {
+record( stringout, "$(P)$(R)#$(MOD)-$(HVCHAN)-OutputPolarity" ) {
     field(DTYP, "asynOctetWrite")
     field(OUT,  "@asyn($(PORT))STR_OutputPolarity($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( stringin, "$(P)$(R)$(MOD)$(HVCHAN):OutputPolarityList" ) {
+record( stringin, "$(P)$(R)#$(MOD)-$(HVCHAN)-OutputPolarityList" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_OutputModeList($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):VoltageMode" ) {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageMode" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageMode($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( stringin, "$(P)$(R)$(MOD)$(HVCHAN):VoltageModeList" ) {
+record( stringin, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageModeList" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_VoltageModeList($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):CurrentMode" ) {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentMode" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentMode($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2" )
 }
 
-record( stringin, "$(P)$(R)$(MOD)$(HVCHAN):CurrentModeList" ) {
+record( stringin, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentModeList" ) {
     field(PINI, "RUNNING")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_CurrentModeList($(LINEADDRCHAN=0.0.0))")

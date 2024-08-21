@@ -1,4 +1,4 @@
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):TemperatureExternal" ) {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-TemperatureExternal" ) {
     field(DESC, "Channel external Temp sensor")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_TemperatureExternal($(LINEADDRCHAN=0.0.0))")
@@ -7,7 +7,7 @@ record( ai, "$(P)$(R)$(MOD)$(HVCHAN):TemperatureExternal" ) {
     field(TSE,  "-2" )
 }
 
-record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VctCoefficient" ) {
+record( ao, "$(P)$(R)#$(MOD)-$(HVCHAN)-VctCoefficient" ) {
     field(DESC, "Voltage control by temperature")
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VctCoefficient($(LINEADDRCHAN=0.0.0))")

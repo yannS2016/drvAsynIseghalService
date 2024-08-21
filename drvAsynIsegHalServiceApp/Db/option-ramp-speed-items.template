@@ -1,7 +1,7 @@
 ######################################
 #   Option: Ramp speed per channel   #
 ######################################
-record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedUp") {
+record( ao, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -10,7 +10,7 @@ record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedUp") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedDown") {
+record( ao, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_VoltageRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -19,7 +19,7 @@ record( ao, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedDown") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedUp") {
+record( ao, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentRampSpeedUp") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedUp($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -28,7 +28,7 @@ record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedUp") {
     info(asyn:READBACK, "1")
 }
 
-record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedDown") {
+record( ao, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentRampSpeedDown") {
     field(DTYP, "asynFloat64")
     field(OUT,  "@asyn($(PORT))DBL_CurrentRampSpeedDown($(LINEADDRCHAN=0.0.0))")
     field(TSE,  "-2")
@@ -37,28 +37,28 @@ record( ao, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedDown") {
     info(asyn:READBACK, "1")
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedMin") {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageRampSpeedMin") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMin($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "V/s")
     field(TSE,  "-2")
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):VoltageRampSpeedMax") {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-VoltageRampSpeedMax") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_VoltageRampSpeedMax($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "V/s")
     field(TSE,  "-2")
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedMin") {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentRampSpeedMin") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentRampSpeedMin($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "A/s")
     field(TSE,  "-2")
 }
 
-record( ai, "$(P)$(R)$(MOD)$(HVCHAN):CurrentRampSpeedMax") {
+record( ai, "$(P)$(R)#$(MOD)-$(HVCHAN)-CurrentRampSpeedMax") {
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_CurrentRampSpeedMax($(LINEADDRCHAN=0.0.0))")
     field(EGU,  "A/s")

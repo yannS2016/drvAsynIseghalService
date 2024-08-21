@@ -1,48 +1,48 @@
-record( longin, "$(P)$(R):SYS-Control1") {
+record( longin, "$(P)$(R)#SYS-Control1") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:6(0.0)")
     field(TSE,  "-2")
 }
-record( longin, "$(P)$(R):SYS-Control2") {
+record( longin, "$(P)$(R)#SYS-Control2") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:74(0.0)")
     field(TSE,  "-2")
 }
-record( longin, "$(P)$(R):SYS-Control3") {
+record( longin, "$(P)$(R)#SYS-Control3") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:342(0.0)")
     field(TSE,  "-2")
 }
-record( longin, "$(P)$(R):SYS-Control4") {
+record( longin, "$(P)$(R)#SYS-Control4") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:1(0.0)")
     field(TSE,  "-2")
 }
-record( longin, "$(P)$(R):SYS-Control5") {
+record( longin, "$(P)$(R)#SYS-Control5") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:234(0.0.0)")
     field(TSE,  "-2")
 }
-record( longin, "$(P)$(R):SYS-Control6") {
+record( longin, "$(P)$(R)#SYS-Control6") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Control:14567(0.0.0.0)")
     field(TSE,  "-2")
 }
 #
-#record( longin, "$(P)$(R):SYS-BitRate") {
+#record( longin, "$(P)$(R)#SYS-BitRate") {
 #    field(DESC, "CAN System bit rate")
 #    field(DTYP, "asynInt32")
 #    field(INP,  "@asyn($(PORT))INT_BitRate")
 #    field(TSE,  "-2")
 #}
 #
-#record( longin, "$(P)$(R):SYS-Temperature") {
+#record( longin, "$(P)$(R)#SYS-Temperature") {
 #    field(DESC, "CAN System bit rate")
 #    field(DTYP, "asynInt32")
 #    field(INP,  "@asyn($(PORT))INT_Temperature[1](0.0.0)")

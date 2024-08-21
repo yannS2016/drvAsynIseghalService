@@ -2,7 +2,7 @@
 # ### System item values     ##
 ###############################
 
-record( longin, "$(P)$(R)SYS-Status") {
+record( longin, "$(P)$(R)#SYS-Status") {
     field(DESC, "CAN system Status")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_Status")
@@ -11,7 +11,7 @@ record( longin, "$(P)$(R)SYS-Status") {
 }
 
 ##Need to had this bit rate as system item
-record( longin, "$(P)$(R)SYS-BitRate") {
+record( longin, "$(P)$(R)#SYS-BitRate") {
     field(DESC, "CAN System bit rate")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_BitRate")
@@ -19,35 +19,35 @@ record( longin, "$(P)$(R)SYS-BitRate") {
     field(TSE,  "-2")
 }
 
-record( longin, "$(P)$(R)SYS-CrateNumber") {
+record( longin, "$(P)$(R)#SYS-CrateNumber") {
     field(DESC, "Number of Crate on system")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_CrateNumber")
     field(TSE,  "-2")
 }
 
-record( longin, "$(P)$(R)SYS-ModuleNumber") {
+record( longin, "$(P)$(R)#SYS-ModuleNumber") {
     field(DESC, "Number of Module on system")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_ModuleNumber")
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)SYS-ModuleList") {
+record( stringin, "$(P)$(R)#SYS-ModuleList") {
     field(DESC, "List of Module on CAN Line")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_ModuleList")
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)SYS-Read") {
+record( stringin, "$(P)$(R)#SYS-Read") {
     field(DESC, "eth0/wlan0")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_Read")
     field(TSE,  "-2")
 }
 
-record( longin, "$(P)$(R)SYS-CycleCounter") {
+record( longin, "$(P)$(R)#SYS-CycleCounter") {
     field(DESC, "Module internal cycle loop counter")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_CycleCounter")
@@ -55,7 +55,7 @@ record( longin, "$(P)$(R)SYS-CycleCounter") {
     field(TSE,  "-2")
 }
 
-record( longin, "$(P)$(R)SYS-LiveInsertionMode") {
+record( longin, "$(P)$(R)#SYS-LiveInsertionMode") {
     field(DESC, "Live Insertion mode")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT))INT_LiveInsertion")
@@ -63,35 +63,35 @@ record( longin, "$(P)$(R)SYS-LiveInsertionMode") {
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)SYS-SaveConfiguration") {
+record( stringin, "$(P)$(R)#SYS-SaveConfiguration") {
     field(DESC, "Save Configuration")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_SaveConfiguration")
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)SYS-ServerVersion") {
+record( stringin, "$(P)$(R)#SYS-ServerVersion") {
     field(DESC, "Server Version")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_ServerVersion")
     field(TSE,  "-2")
 }
 
-record( stringout, "$(P)$(R)SYS-LogPath") {
+record( stringout, "$(P)$(R)#SYS-LogPath") {
     field(DESC, "isegHAL log path")
     field(DTYP, "asynOctetWrite")
     field(OUT,  "@asyn($(PORT))STR_LogPath")
     field(TSE,  "-2")
 }
 
-record( stringin, "$(P)$(R)SYS-LogPath-RB") {
+record( stringin, "$(P)$(R)#SYS-LogPath-RB") {
     field(DESC, "isegHAL log path")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT))STR_LogPath")
     field(TSE,  "-2")
 }
 
-record(mbbo, "$(P)$(R)SYS-LogLevel") {
+record(mbbo, "$(P)$(R)#SYS-LogLevel") {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT))INT_LogLevel")
     field(ZRVL, "1")
