@@ -20,7 +20,7 @@ file "can-items.template"
 {
   pattern
   { CAN   CANLINE }
-  { CAN0:  0      }
+  { CAN0  0      }
 }
 ###############################################
 # ICSMINI  based system
@@ -30,7 +30,7 @@ file "module-items.template"
 {
   pattern
   { MOD   LINEADDR  }
-  { MICC0:  0.0       }
+  { MICC0  0.0       }
 }
 
 # i.e MICC based controller 1 Channels on CAN 0
@@ -38,14 +38,14 @@ file "channel-items.template"
 {
   pattern
   { MOD       HVCHAN    LINEADDRCHAN  }
-  { MICC0:    0         0.0.0         }
-  { MICC0:    1         0.0.1         }
-  { MICC0:    2         0.0.2         }
-  { MICC0:    3         0.0.3         }
-  { MICC0:    4         0.0.4         }
-  { MICC0:    5         0.0.5         }
-  { MICC0:    6         0.0.6         }
-  { MICC0:    7         0.0.7         }
+  { MICC0    0         0.0.0         }
+  { MICC0    1         0.0.1         }
+  { MICC0    2         0.0.2         }
+  { MICC0    3         0.0.3         }
+  { MICC0    4         0.0.4         }
+  { MICC0    5         0.0.5         }
+  { MICC0    6         0.0.6         }
+  { MICC0    7         0.0.7         }
 }
 
 # i.e MICC based controller 1 Channels with ramp speed items on CAN 0
@@ -53,14 +53,14 @@ file "option-ramp-speed-items.template"
 {
   pattern
   { MOD       HVCHAN    LINEADDRCHAN  }
-  { MICC0:    0         0.0.0         }
-  { MICC0:    1         0.0.1         }
-  { MICC0:    2         0.0.2         }
-  { MICC0:    3         0.0.3         }
-  { MICC0:    4         0.0.4         }
-  { MICC0:    5         0.0.5         }
-  { MICC0:    6         0.0.6         }
-  { MICC0:    7         0.0.7         }
+  { MICC0    0         0.0.0         }
+  { MICC0    1         0.0.1         }
+  { MICC0    2         0.0.2         }
+  { MICC0    3         0.0.3         }
+  { MICC0    4         0.0.4         }
+  { MICC0    5         0.0.5         }
+  { MICC0    6         0.0.6         }
+  { MICC0    7         0.0.7         }
 }
 
 
