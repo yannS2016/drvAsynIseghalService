@@ -48,6 +48,14 @@ drvAsynIsegHalServiceTest_LIBS += drvAsynIsegHalService asyn
 drvAsynIsegHalServiceTest_SRCS += drvAsynIsegHalServiceTest_registerRecordDeviceDriver.cpp
 drvAsynIsegHalServiceTest_SRCS_DEFAULT += drvAsynIsegHalServiceMain.cpp
 
+# Link QSRV (pvAccess Server) if available
+ifdef EPICS_QSRV_MAJOR_VERSION
+    drvAsynIsegHalServiceTest_LIBS += qsrv
+    drvAsynIsegHalServiceTest_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+    drvAsynIsegHalServiceTest_DBD += PVAServerRegister.dbd
+    drvAsynIsegHalServiceTest_DBD += qsrv.dbd
+endif
+
 
 drvAsynIsegHalServiceTest_SYS_LIBS += isegHAL-service
 drvAsynIsegHalServiceTest_LIBS += $(EPICS_BASE_IOC_LIBS)
