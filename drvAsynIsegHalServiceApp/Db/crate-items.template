@@ -52,7 +52,7 @@ record( ai, "$(P)$(R)#$(CRATE)-FanSpeed") {
     field(TSE,  "-2")
 }
 
-record( ai, "$(P)$(R)#$(CRATE)-Temperature[0]" ) {
+record( ai, "$(P)$(R)#$(CRATE)-Temperature0" ) {
     field(DESC, "Crate Internal Temperature")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[0]($(LINEADDR=0.1000))")
@@ -61,7 +61,7 @@ record( ai, "$(P)$(R)#$(CRATE)-Temperature[0]" ) {
     field(TSE,  "-2" )
 }
 
-record( ai, "$(P)$(R)#$(CRATE)-Temperature[1]" ) {
+record( ai, "$(P)$(R)#$(CRATE)-Temperature1" ) {
     field(DESC, "Crate Internal Temperature")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[1]($(LINEADDR=0.1000))")
@@ -70,7 +70,7 @@ record( ai, "$(P)$(R)#$(CRATE)-Temperature[1]" ) {
     field(TSE,  "-2" )
 }
 
-record( ai, "$(P)$(R)#$(CRATE)-Temperature[2]" ) {
+record( ai, "$(P)$(R)#$(CRATE)-Temperature2" ) {
     field(DESC, "Crate Internal Temperature")
     field(DTYP, "asynFloat64")
     field(INP,  "@asyn($(PORT))DBL_Temperatures[2]($(LINEADDR=0.1000))")
