@@ -47,12 +47,12 @@
 #define WRITE_BUF_LEN   8
 #define ITEM_TYPE_LEN   4
 #define ITEM_FQN_LEN    34
-#define ITEM_ADDR_LEN   6
+#define ITEM_ADDR_LEN   8
 
-#define POLLER_AUTOCONNECT_SLEEP	30 		// second.
-#define POLLER_DEFAULT_SLEEP 			0.071 // ess timing system.
-#define DEVICE_RECONNECT_ATTEMPT 	30 		// 10 min.
-#define ISEG_ITEM_VALUE_MAX_LEN		200
+#define POLLER_AUTOCONNECT_SLEEP  30  // second.
+#define POLLER_DEFAULT_SLEEP      1   // Poll at 1 Hz (use iocsh provided cmds to adjust).
+#define DEVICE_RECONNECT_ATTEMPT  30  // 10 min.
+#define ISEG_ITEM_VALUE_MAX_LEN   200
 
 typedef enum {
 
