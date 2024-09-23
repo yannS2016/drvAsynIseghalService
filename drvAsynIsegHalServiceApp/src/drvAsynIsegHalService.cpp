@@ -1255,7 +1255,6 @@ void drvIsegHalPollerThread::run()
     _intrUser->uflags = UINT32DIGITALTYPE;
 
     _intrUser->intrHandle = (void*)pUInt32D;
-    _intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
 
     _pasynIntrUser.push_back(pasynUser);
@@ -1284,7 +1283,6 @@ void drvIsegHalPollerThread::run()
     _intrUser->uflags = INT32TYPE;
 
     _intrUser->intrHandle = (void*)pInt32;
-    _intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
 
     _pasynIntrUser.push_back(pasynUser);
@@ -1314,7 +1312,6 @@ void drvIsegHalPollerThread::run()
     _intrUser->uflags = FLOAT64TYPE;
 
     _intrUser->intrHandle = (void*)pFloat64;
-    _intrUser->prevItemVal[READ_BUF_LEN] = 0;
     pasynUser->userData = (void*)_intrUser;
 
     _pasynIntrUser.push_back(pasynUser);
@@ -1338,11 +1335,11 @@ void drvIsegHalPollerThread::run()
     }
 
     if( _pause > 0. ) this->thread.sleep( _pause );
+
     if( !_run ) continue;
 
     intrUserItr _intrUserItr = _pasynIntrUser.begin();
     int _yesNo = 0;
-
     for( ; _intrUserItr != _pasynIntrUser.end(); ++_intrUserItr ) {
       epicsThreadSleep(_qRequestInterval);
       asynUser *intrUser = (asynUser *)(*_intrUserItr);
@@ -1358,7 +1355,12 @@ void drvIsegHalPollerThread::run()
         drvAsynIsegHalService_->setParamAlarmSeverity(intrUser->reason, 3);
         drvAsynIsegHalService_->setParamStatus( intrUser->reason, status);
         drvAsynIsegHalService_->callParamCallbacks();
-      }
+      } /* else {
+        drvAsynIsegHalService_->setParamAlarmStatus(  intrUser->reason, 0);
+        drvAsynIsegHalService_->setParamAlarmSeverity(intrUser->reason, 0);
+        drvAsynIsegHalService_->setParamStatus( intrUser->reason, asynSuccess);
+        drvAsynIsegHalService_->callParamCallbacks();
+			} */
     }
   }
 }
@@ -1388,10 +1390,11 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
   asynStatus status = asynSuccess;
 
 
-  if(drvAsynIsegHalService_)
+  if(drvAsynIsegHalService_) {
     drvAsynIsegHalService_->lock();
     status = drvAsynIsegHalService_->getIsegHalItem(pasynUser, &item);
     drvAsynIsegHalService_->unlock();
+  }
 
   if(status == asynSuccess) {
     drvAsynIsegHalService_->setParamAlarmStatus(  pasynUser->reason, status);
@@ -1406,10 +1409,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
         asynFloat64Interrupt *pFloat64 = (asynFloat64Interrupt*)intrUserData->intrHandle;
         epicsFloat64 float64Value;
         float64Value = (epicsFloat64)strtod (item.value, NULL);
-        if(status != asynSuccess) float64Value = NAN;
-
-        if ( strcmp( item.value, prevItemVal ) != 0 )
-          pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
+        if(status == asynSuccess)
+          if ( strcmp( item.value, prevItemVal ) != 0 )
+            pFloat64->callback(pFloat64->userPvt, pasynUser, float64Value);
         break;
       }
 
@@ -1424,10 +1426,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
         //printf("\033[0;33m%s : %s : Reason: %d: item value: %s: value: %d mask %d\n\033[0m", epicsThreadGetNameSelf(), __FUNCTION__, pasynUser->reason, item.value,uInt32Value, status, mask );
         if (mask != 0 ) uInt32Value &= mask;
 
-        if(status != asynSuccess) uInt32Value = NAN;
-
-        if ( strcmp( item.value, prevItemVal ) != 0 )
-            pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
+        if(status == asynSuccess)
+          if ( strcmp( item.value, prevItemVal ) != 0 )
+              pUInt32D->callback(pUInt32D->userPvt, pasynUser, uInt32Value);
         break;
       }
 
@@ -1436,10 +1437,9 @@ static void  drvIsegHalPollerThreadCallackBack(asynUser *pasynUser)
         asynInt32Interrupt *pInt32 = (asynInt32Interrupt*)intrUserData->intrHandle;
         epicsInt32 int32Value;
         int32Value = (epicsInt32)atoi(item.value);
-        if(status != asynSuccess) int32Value = NAN;
-
-        if ( strcmp( item.value, prevItemVal ) != 0 )
-          pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
+        if(status == asynSuccess)
+          if ( strcmp( item.value, prevItemVal ) != 0 )
+            pInt32->callback(pInt32->userPvt, pasynUser, int32Value);
         break;
       }
 
