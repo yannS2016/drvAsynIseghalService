@@ -749,6 +749,8 @@ asynStatus drvAsynIsegHalService::writeOctet( asynUser *pasynUser, const char *v
     setParamStatus( function, asynError);
     return asynError;
   }
+
+  *nActual = (size_t)strlen(value);
   getTimeStamp( &timeStamp );
   pasynUser->timestamp = timeStamp;
 
